@@ -12,10 +12,10 @@ Wir stehen im Epizentrum einer fundamentalen Metamorphose. AGENTICUM G5 ist das 
 ## 3. Die Architektur der Souveränität
 
 - **Der Perfekte Zwilling:** Klonen der strategischen DNA, Ethik und Vision des Operators.
-- **Alphabet Native Stack:** Maximale Leistung durch Modale Kohärenz (Gemini, Veo, Flash Audio).
+- **Google Native Stack:** Maximale Leistung durch Modale Kohärenz (Gemini, Veo, Flash Audio).
 - **Echtzeit-Grounding:** Festung auf dem Fels der verifizierbaren Realität.
 
-## 4. Das 52-Knoten-Gewebe
+## 4. Das modulare Synergie-Gewebe
 
 Dezentralisierte Intelligenz als organischer Schwarm:
 

@@ -1,96 +1,263 @@
-import type { NodeState, GeneratedAsset } from '../lib/types';
-import { X, FileText, Film, Award, Palette, Copy, Download, Check } from 'lucide-react';
+import type { GeneratedAsset, NodeState } from '../lib/types';
+import { X, FileText, Film, Award, Palette, Copy, Check, BarChart2, Info, Code, Zap, Hash, Database, Clock, RefreshCw, XCircle, Eye, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ABTestResults, type ABEvaluationResult } from './ABTestResults';
+import type { LucideIcon } from 'lucide-react';
+import { runABEvaluation } from '../lib/api';
 
 interface InspectorProps {
   selectedNode: NodeState | null;
   assets: GeneratedAsset[];
   onClose: () => void;
+  onOpenAsset?: (asset: GeneratedAsset) => void;
+  onRegenerateNode?: (nodeId: string, feedback: string) => void;
 }
 
-export function Inspector({ selectedNode, assets, onClose }: InspectorProps) {
-  // Find assets for selected node
+type MainTab = 'content' | 'data';
+type InspectTab = 'preview' | 'forensics' | 'source' | 'actions';
+
+export function Inspector({ selectedNode, assets, onClose, onOpenAsset, onRegenerateNode }: InspectorProps) {
+  const [activeTab, setActiveTab] = useState<MainTab>('content');
+  const [abTestTarget, setAbTestTarget] = useState<GeneratedAsset | null>(null);
+  const [evaluationData, setEvaluationData] = useState<ABEvaluationResult | null>(null);
+  const [evaluating, setEvaluating] = useState(false);
+  const [inspectTab, setInspectTab] = useState<InspectTab>('preview');
+  const [interventionPrompt, setInterventionPrompt] = useState('');
+  const [isIntervening, setIsIntervening] = useState(false);
+
+  const startTest = async (target: GeneratedAsset) => {
+    setAbTestTarget(target);
+    setEvaluating(true);
+    setEvaluationData(null);
+    try {
+      const otherAsset = assets.find(a => a.id !== target.id) || target;
+      const result = await runABEvaluation(target, otherAsset);
+      setEvaluationData(result);
+    } catch (e) {
+      console.error("Evaluation error:", e);
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
   const nodeAssets = selectedNode 
     ? assets.filter(a => a.generatedBy === selectedNode.id)
     : [];
 
   if (!selectedNode && assets.length === 0) {
     return (
-      <aside className="w-72 border-l border-[rgba(255,255,255,0.08)] bg-[#1A1D23] flex items-center justify-center">
+      <aside className="w-80 border-l border-[rgba(255,255,255,0.08)] bg-[#1A1D23] flex items-center justify-center">
         <div className="text-center p-6">
           <div className="text-[#5F6368] text-sm mb-1">No Selection</div>
-          <p className="text-[10px] text-[#5F6368]">Click a node to inspect</p>
+          <p className="text-[10px] text-[#5F6368] uppercase tracking-widest">Awaiting node telemetry</p>
         </div>
       </aside>
     );
   }
 
   return (
-    <aside className="w-72 border-l border-[rgba(255,255,255,0.08)] bg-[#1A1D23] flex flex-col">
+    <aside className="w-80 border-l border-[rgba(255,255,255,0.08)] bg-[#1A1D23] flex flex-col z-40 overflow-hidden">
       
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.08)]">
-        <span className="text-xs font-display text-[#9AA0A6] uppercase tracking-wider">Inspector</span>
-        <button 
-          onClick={onClose}
-          className="p-1 hover:bg-[#22262E] rounded text-[#5F6368] hover:text-[#E8EAED]"
-        >
-          <X size={14} />
-        </button>
+      {/* Header & Main Tabs */}
+      <div className="flex flex-col border-b border-[rgba(255,255,255,0.08)] shrink-0">
+        <div className="flex items-center justify-between px-4 py-3">
+          <span className="text-[10px] font-mono text-[#5F6368] uppercase tracking-widest">Inspector Control</span>
+          <button onClick={onClose} className="p-1 hover:bg-white/5 rounded text-[#5F6368] hover:text-[#E8EAED]">
+            <X size={14} />
+          </button>
+        </div>
+        <div className="flex px-2 pb-1 gap-1">
+          <button 
+            onClick={() => { setActiveTab('content'); setAbTestTarget(null); }}
+            className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-tighter rounded transition-all ${activeTab === 'content' ? 'bg-white/5 text-[#E8EAED]' : 'text-[#5F6368] hover:text-[#9AA0A6]'}`}
+          >
+            Assets
+          </button>
+          <button 
+            onClick={() => setActiveTab('data')}
+            className={`flex-1 py-1.5 text-[10px] uppercase font-bold tracking-tighter rounded transition-all ${activeTab === 'data' ? 'bg-white/5 text-[#E8EAED]' : 'text-[#5F6368] hover:text-[#9AA0A6]'}`}
+          >
+            Telemetry
+          </button>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto">
         
-        {/* Node Details */}
-        {selectedNode && (
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] text-[#5F6368] uppercase tracking-wider mb-1">Node</div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono text-[#4285F4]">{selectedNode.id}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                  selectedNode.status === 'running' ? 'bg-[#00E5FF]/20 text-[#00E5FF]' :
-                  selectedNode.status === 'completed' ? 'bg-[#34A853]/20 text-[#34A853]' :
-                  'bg-[rgba(255,255,255,0.1)] text-[#5F6368]'
-                }`}>
-                  {selectedNode.status}
-                </span>
-              </div>
+        {activeTab === 'data' && selectedNode && (
+          <div className="p-4 space-y-6">
+            {/* Sub-Tabs for Deep Inspection */}
+            <div className="flex border-b border-white/5 mb-6">
+              {[
+                { id: 'preview', icon: Eye, label: 'Trace' },
+                { id: 'forensics', icon: Info, label: 'Stats' },
+                { id: 'source', icon: Code, label: 'JSON' },
+                { id: 'actions', icon: Zap, label: 'Cmds' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setInspectTab(tab.id as InspectTab)}
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[8px] font-bold uppercase tracking-widest border-b-2 transition-all ${
+                    inspectTab === tab.id 
+                      ? 'border-[#4285F4] text-[#4285F4] bg-[#4285F4]/5' 
+                      : 'border-transparent text-[#5F6368] hover:text-[#9AA0A6]'
+                  }`}
+                >
+                  <tab.icon size={12} />
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            <div>
-              <div className="text-[10px] text-[#5F6368] uppercase tracking-wider mb-1">Progress</div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-[rgba(255,255,255,0.1)] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[#4285F4] rounded-full transition-all"
-                    style={{ width: `${selectedNode.progress}%` }}
-                  />
+            {inspectTab === 'preview' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                <div>
+                  <div className="text-[9px] text-[#5F6368] uppercase font-mono mb-2">Node Identity</div>
+                  <div className="p-3 bg-white/3 rounded-lg border border-white/5">
+                     <div className="text-xs font-mono text-[#E8EAED]">{selectedNode.id}</div>
+                     <div className="text-[10px] text-[#9AA0A6] mt-1 italic">Authorized Interaction</div>
+                  </div>
                 </div>
-                <span className="text-xs font-mono text-[#E8EAED]">{selectedNode.progress}%</span>
+
+                <div>
+                  <div className="text-[9px] text-[#5F6368] uppercase font-mono mb-2">Neural Progress</div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-mono text-[#9AA0A6]">
+                      <span>COMPLETION</span>
+                      <span>{selectedNode.progress}%</span>
+                    </div>
+                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                       <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${selectedNode.progress}%` }}
+                        className="h-full bg-[#00E5FF]"
+                       />
+                    </div>
+                  </div>
+                </div>
+
+                {selectedNode.output && (
+                  <div>
+                    <div className="text-[9px] text-[#5F6368] uppercase font-mono mb-2">Thinking Trace</div>
+                    <div className="p-3 bg-black/40 rounded-lg font-mono text-[9px] text-[#34A853] leading-relaxed max-h-40 overflow-auto border border-[#34A853]/20">
+                      {selectedNode.output}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {inspectTab === 'forensics' && (
+              <div className="space-y-6">
+                 <div className="p-4 rounded-xl bg-[#4285F4]/5 border border-[#4285F4]/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                       <span className="text-[10px] text-[#5F6368] uppercase font-bold">Inference Integrity</span>
+                       <span className="text-xs font-mono text-[#34A853]">98.1%</span>
+                    </div>
+                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                       <div className="h-full bg-[#34A853]" style={{ width: '98.1%' }} />
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    <ForensicItem icon={Clock} label="Processed Time" value="0.84s" />
+                    <ForensicItem icon={Database} label="Vector Recall" value="12 Pointers" />
+                    <ForensicItem icon={Hash} label="Generated Tokens" value="240 t/s" />
+                 </div>
               </div>
-            </div>
+            )}
+
+            {inspectTab === 'source' && (
+               <div className="bg-black/90 rounded-xl p-4 font-mono text-[9px] text-[#34A853]/80 border border-white/5 overflow-auto max-h-96">
+                  <pre>{JSON.stringify(selectedNode, null, 2)}</pre>
+               </div>
+            )}
+
+            {inspectTab === 'actions' && (
+              <div className="space-y-4">
+                 <div className="p-4 rounded-xl bg-[#00E5FF]/5 border border-[#00E5FF]/20 space-y-3">
+                    <div className="flex items-center gap-2 text-[#00E5FF]">
+                       <Zap size={14} />
+                       <span className="text-[10px] font-bold uppercase tracking-widest">Neural Override</span>
+                    </div>
+                    <textarea 
+                      value={interventionPrompt}
+                      onChange={(e) => setInterventionPrompt(e.target.value)}
+                      placeholder="Enter corrective feedback for this node..."
+                      className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-[10px] font-mono text-[#E8EAED] placeholder:text-[#5F6368] focus:border-[#00E5FF]/50 outline-none transition-all resize-none h-24"
+                    />
+                    <button 
+                      disabled={!interventionPrompt || isIntervening}
+                      onClick={async () => {
+                         if (!selectedNode) return;
+                         setIsIntervening(true);
+                         try {
+                           await onRegenerateNode?.(selectedNode.id, interventionPrompt);
+                           setInterventionPrompt('');
+                         } finally {
+                           setIsIntervening(false);
+                         }
+                      }}
+                      className="w-full py-2 bg-[#00E5FF] hover:bg-[#00D0E8] disabled:opacity-50 disabled:hover:bg-[#00E5FF] text-black text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      {isIntervening ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                      Trigger Partial Sync
+                    </button>
+                 </div>
+
+                 <div className="space-y-2">
+                    <button className="w-full flex items-center justify-between p-3 rounded-xl bg-white/3 border border-white/5 hover:border-[#4285F4]/50 transition-all group">
+                       <div className="flex items-center gap-3">
+                          <RefreshCw size={12} className="text-[#4285F4]" />
+                          <div className="text-left">
+                             <div className="text-[9px] font-bold text-[#E8EAED]">RE-INDEX CACHE</div>
+                          </div>
+                       </div>
+                       <ChevronRight size={12} className="text-[#5F6368] group-hover:text-[#4285F4]" />
+                    </button>
+                    <button className="w-full flex items-center justify-between p-3 rounded-xl bg-[#EA4335]/5 border border-[#EA4335]/10 hover:border-[#EA4335]/40 transition-all group">
+                       <div className="flex items-center gap-3">
+                          <XCircle size={12} className="text-[#EA4335]" />
+                          <div className="text-left">
+                             <div className="text-[9px] font-bold text-[#EA4335]">TERMINATE</div>
+                          </div>
+                       </div>
+                       <ChevronRight size={12} className="text-[#5F6368] group-hover:text-[#EA4335]" />
+                    </button>
+                 </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Assets */}
-        {nodeAssets.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-[10px] text-[#5F6368] uppercase tracking-wider">Output Assets</div>
-            {nodeAssets.map(asset => (
-              <AssetCard key={asset.id} asset={asset} />
-            ))}
-          </div>
-        )}
-
-        {/* All Assets (if no node selected) */}
-        {!selectedNode && assets.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-[10px] text-[#5F6368] uppercase tracking-wider">All Assets</div>
-            {assets.map(asset => (
-              <AssetCard key={asset.id} asset={asset} />
-            ))}
+        {activeTab === 'content' && (
+          <div className="p-4 space-y-4">
+             {abTestTarget ? (
+               <div className="space-y-4">
+                 <button 
+                  onClick={() => setAbTestTarget(null)}
+                  className="text-[10px] text-[#5F6368] hover:text-[#E8EAED] flex items-center gap-1"
+                 >
+                   <X size={10} /> Back to Assets
+                 </button>
+                 <ABTestResults 
+                  assetA={abTestTarget} 
+                  assetB={assets.find(a => a.id !== abTestTarget.id) || abTestTarget} 
+                  data={evaluationData}
+                  loading={evaluating}
+                 />
+               </div>
+             ) : (
+               (selectedNode ? nodeAssets : assets).map(asset => (
+                 <AssetCard 
+                  key={asset.id} 
+                  asset={asset} 
+                  onStartAB={() => startTest(asset)} 
+                  onView={() => onOpenAsset?.(asset)}
+                 />
+               ))
+             )}
           </div>
         )}
       </div>
@@ -98,36 +265,12 @@ export function Inspector({ selectedNode, assets, onClose }: InspectorProps) {
   );
 }
 
-function AssetCard({ asset }: { asset: GeneratedAsset }) {
+function AssetCard({ asset, onStartAB, onView }: { asset: GeneratedAsset, onStartAB: () => void, onView: () => void }) {
   const [copied, setCopied] = useState(false);
-  const [showImage, setShowImage] = useState(false);
-
   const handleCopy = () => {
     navigator.clipboard.writeText(asset.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDownload = () => {
-    if (asset.imageData?.url) {
-      // Open image URL in new tab
-      window.open(asset.imageData.url, '_blank');
-    } else if (asset.imageData?.base64) {
-      // Legacy: Download base64 image
-      const link = document.createElement('a');
-      link.href = `data:${asset.imageData.mimeType};base64,${asset.imageData.base64}`;
-      link.download = `${asset.title.replace(/\s+/g, '_')}.png`;
-      link.click();
-    } else {
-      // Download text
-      const blob = new Blob([asset.content], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${asset.title.replace(/\s+/g, '_')}.md`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
   };
 
   const getIcon = () => {
@@ -142,64 +285,54 @@ function AssetCard({ asset }: { asset: GeneratedAsset }) {
   const hasImage = !!(asset.imageData?.url || asset.imageData?.base64);
 
   return (
-    <div className="p-3 rounded-lg bg-[#22262E] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.1)] transition-all group">
+    <div className="p-3 rounded-lg bg-[#22262E] border border-white/5 hover:border-white/10 transition-all group">
       <div className="flex items-start gap-2 mb-2">
-        <div className="p-1.5 rounded bg-[rgba(255,255,255,0.05)]">
+        <div className="p-1.5 rounded bg-white/5">
           {getIcon()}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] text-[#5F6368] font-mono">{asset.generatedBy}</div>
+          <div className="text-[9px] text-[#5F6368] font-mono uppercase">{asset.generatedBy}</div>
           <div className="text-xs text-[#E8EAED] font-medium truncate">{asset.title}</div>
         </div>
-        {hasImage && (
-          <span className="text-[9px] px-1.5 py-0.5 bg-[#34A853]/20 text-[#34A853] rounded">
-            🖼️ IMAGE
-          </span>
-        )}
       </div>
 
-      {/* Image Preview */}
-      {hasImage && (
-        <div className="mb-2">
-          <button 
-            onClick={() => setShowImage(!showImage)}
-            className="text-[10px] text-[#4285F4] hover:underline"
-          >
-            {showImage ? 'Hide Image' : 'Show Image Preview'}
-          </button>
-          {showImage && (
-            <div className="mt-2 rounded-lg overflow-hidden border border-[rgba(255,255,255,0.1)]">
-              <img 
-                src={asset.imageData!.url || `data:${asset.imageData!.mimeType};base64,${asset.imageData!.base64}`}
-                alt={asset.title}
-                className="w-full h-auto"
-                crossOrigin="anonymous"
-              />
-            </div>
-          )}
-        </div>
-      )}
-      
-      <p className="text-[11px] text-[#9AA0A6] line-clamp-3 mb-2">
-        {hasImage ? asset.imageData!.prompt.slice(0, 120) : asset.content.slice(0, 120)}...
+      <p className="text-[10px] text-[#9AA0A6] line-clamp-2 mb-3">
+        {hasImage ? asset.imageData!.prompt : asset.content.slice(0, 100)}...
       </p>
 
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button 
-          onClick={handleCopy}
-          className="flex items-center gap-1 px-2 py-1 text-[10px] bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] rounded text-[#9AA0A6] transition-all"
+          onClick={onView}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[9px] bg-white/5 hover:bg-white/10 rounded font-bold text-[#E8EAED] transition-all"
         >
-          {copied ? <Check size={10} className="text-[#34A853]" /> : <Copy size={10} />}
-          {copied ? 'Copied' : 'Copy'}
+          <Eye size={10} /> VIEW
         </button>
         <button 
-          onClick={handleDownload}
-          className="flex items-center gap-1 px-2 py-1 text-[10px] bg-[#4285F4]/20 hover:bg-[#4285F4]/30 rounded text-[#4285F4] transition-all"
+          onClick={onStartAB}
+          className="px-2 py-1.5 bg-[#34A853]/20 hover:bg-[#34A853]/30 rounded text-[#34A853] transition-all flex items-center justify-center"
+          title="A/B Test"
         >
-          <Download size={10} />
-          {hasImage ? 'Save Image' : 'Download'}
+          <BarChart2 size={10} />
+        </button>
+        <button 
+          onClick={handleCopy}
+          className="px-2 py-1.5 bg-white/5 hover:bg-white/10 rounded text-[#9AA0A6] transition-all flex items-center justify-center"
+        >
+          {copied ? <Check size={10} className="text-[#34A853]" /> : <Copy size={10} />}
         </button>
       </div>
+    </div>
+  );
+}
+
+function ForensicItem({ icon: Icon, label, value }: { icon: LucideIcon, label: string, value: string }) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg bg-white/2 border border-white/5">
+       <div className="flex items-center gap-2">
+          <Icon size={12} className="text-[#5F6368]" />
+          <span className="text-[9px] text-[#9AA0A6] uppercase">{label}</span>
+       </div>
+       <span className="text-[9px] font-mono text-[#E8EAED]">{value}</span>
     </div>
   );
 }

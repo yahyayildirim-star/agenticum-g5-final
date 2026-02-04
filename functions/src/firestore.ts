@@ -108,3 +108,50 @@ export async function failSession(sessionId: string, error: string) {
     failedAt: new Date(),
   });
 }
+
+export async function updateSessionStatus(sessionId: string, status: string, finalResult?: string) {
+  const data: any = { status };
+  if (finalResult) data.finalResult = finalResult;
+  await firestore.collection("sessions").doc(sessionId).update(data);
+}
+
+/**
+ * ─── AUDIT LOGS (Security & Compliance) ──────────────────────
+ */
+export async function appendAuditLog(event: {
+  type: "SECURITY" | "OPERATIONAL" | "IDENTITY";
+  action: string;
+  actor: string;
+  details: any;
+}) {
+  await firestore.collection("audit_logs").add({
+    ...event,
+    timestamp: FieldValue.serverTimestamp(),
+  });
+}
+/**
+ * ─── CAMPAIGNS (Distribution & Performance) ──────────────────
+ */
+export async function createCampaign(campaign: {
+  name: string;
+  platform: 'google_ads' | 'instagram' | 'linkedin';
+  assetId: string;
+  status: 'active' | 'paused' | 'completed';
+  budget: number;
+}) {
+  await firestore.collection("campaigns").add({
+    ...campaign,
+    createdAt: FieldValue.serverTimestamp(),
+    performance: {
+      impressions: 0,
+      clicks: 0,
+      ctr: 0,
+      spend: 0
+    }
+  });
+}
+
+export async function getCampaigns() {
+  const snapshot = await firestore.collection("campaigns").orderBy("createdAt", "desc").get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}

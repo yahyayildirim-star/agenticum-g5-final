@@ -2,7 +2,7 @@
 set -e
 
 export PROJECT_ID="${PROJECT_ID:-tutorai-e39uu}"
-export CONSOLE_URL="${CONSOLE_URL:-https://storage.googleapis.com/$PROJECT_ID-console/index.html}"
+export CONSOLE_URL="${CONSOLE_URL:-https://storage.googleapis.com/$PROJECT_ID-console-us/index.html}"
 
 echo "================================================"
 echo "  AGENTICUM G5 — Landing Page Deployment"

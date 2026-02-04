@@ -1,17 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Sidebar } from './components/Sidebar';
-import { CommandBar } from './components/CommandBar';
-import { NodeCanvas } from './components/NodeCanvas';
-import { Inspector } from './components/Inspector';
-import { Terminal } from './components/Terminal';
-import { startOrchestration, pollSessionStatus } from './lib/api';
-import type { NodeState, LogEntry, GeneratedAsset, VaultFile } from './lib/types';
-import { Cpu, Zap, Database, Globe } from 'lucide-react';
+import { 
+  Sidebar, 
+  CommandBar, 
+  NodeCanvas, 
+  Inspector, 
+  Terminal, 
+  BrandHub, 
+  PerformanceMetrics, 
+  AuditLogViewer, 
+  DistributionHub, 
+  SystemSettings, 
+  TelemetryDashboard,
+  type SystemTelemetry,
+  FileVault,
+  OmniWindow as OmniWindowComp,
+  AssetPreview,
+  NeuralMeshBackground,
+  OSOverlay,
+  ProtocolLock
+} from './components';
+import { startOrchestration, pollSessionStatus, resumeOrchestration } from './lib/api';
+import type { NodeState, LogEntry, GeneratedAsset, VaultFile, OrchestrationResponse, OmniWindow, WindowType } from './lib/types';
+import { Cpu, Zap, Database, CheckCircle, XCircle, Terminal as TerminalIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   // Core State
   const [isRunning, setIsRunning] = useState(false);
-  const [_sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [nodes, setNodes] = useState<Record<string, NodeState>>({});
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [assets, setAssets] = useState<GeneratedAsset[]>([]);
@@ -22,9 +38,47 @@ function App() {
   const [terminalCollapsed, setTerminalCollapsed] = useState(false);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [commandBarOpen, setCommandBarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [systemTime, setSystemTime] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<'nodes' | 'terminal'| 'vault' | 'brand' | 'audit' | 'distribution' | 'telemetry'>('nodes');
+  const [isAwaitingApproval, setIsAwaitingApproval] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
+  const [telemetryStats, setTelemetryStats] = useState<SystemTelemetry | undefined>(undefined);
+  const [windows, setWindows] = useState<OmniWindow[]>([]);
+  const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
+  const [protocolLock, setProtocolLock] = useState<{ active: boolean; actionName: string; onConfirm: () => void } | null>(null);
   
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ════ SUBSTRATE MEMORY (PERSISTENCE) ════
+  useEffect(() => {
+    const savedVault = localStorage.getItem('g5_vault');
+    const savedAssets = localStorage.getItem('g5_assets');
+    const savedLogs = localStorage.getItem('g5_logs');
+    
+    if (savedVault) setVaultFiles(JSON.parse(savedVault));
+    if (savedAssets) setAssets(JSON.parse(savedAssets));
+    if (savedLogs) setLogs(JSON.parse(savedLogs));
+
+    // Initialize Branding
+    const primary = localStorage.getItem('g5_brand_primary');
+    const secondary = localStorage.getItem('g5_brand_secondary');
+    if (primary) document.documentElement.style.setProperty('--brand-primary', primary);
+    if (secondary) document.documentElement.style.setProperty('--brand-secondary', secondary);
+    if (primary) document.documentElement.style.setProperty('--brand-glow', `${primary}66`);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('g5_vault', JSON.stringify(vaultFiles));
+  }, [vaultFiles]);
+
+  useEffect(() => {
+    localStorage.setItem('g5_assets', JSON.stringify(assets));
+  }, [assets]);
+
+  useEffect(() => {
+    localStorage.setItem('g5_logs', JSON.stringify(logs));
+  }, [logs]);
 
   // System Clock
   useEffect(() => {
@@ -62,10 +116,73 @@ function App() {
     setLogs(prev => [...prev, newLog]);
   }, []);
 
+  // ════ WINDOW MANAGEMENT ════
+  const openWindow = (type: WindowType, title: string, data: GeneratedAsset) => {
+    const id = `win-${Math.random().toString(36).substr(2, 9)}`;
+    const maxZ = windows.length > 0 ? Math.max(...windows.map(w => w.zIndex)) : 100;
+    const newWindow: OmniWindow = {
+      id,
+      type,
+      title,
+      zIndex: maxZ + 1,
+      isMinimized: false,
+      data
+    };
+    setWindows(prev => [...prev, newWindow]);
+    setActiveWindowId(id);
+  };
+
+  const closeWindow = (id: string) => {
+    setWindows(prev => prev.filter(w => w.id !== id));
+    if (activeWindowId === id) setActiveWindowId(null);
+  };
+
+  const focusWindow = (id: string) => {
+    setWindows(prev => {
+      const currentMaxZ = prev.length > 0 ? Math.max(...prev.map(w => w.zIndex)) : 100;
+      return prev.map(w => w.id === id ? { ...w, zIndex: currentMaxZ + 1 } : w);
+    });
+    setActiveWindowId(id);
+  };
+
+  const triggerNeuralDialogue = useCallback(() => {
+    const dialoguePool = [
+      { source: 'ORCHESTRATOR', message: "Neural substrate analysis complete. Initiating multi-channel sync." },
+      { source: 'STRATEGIST', message: "Wait. I'm seeing a 14% deviation in audience sentiment patterns. We should recalibrate the visual anchors." },
+      { source: 'AUDITOR', message: "Security check passed. Sentiment recalibration is approved within safety parameters." },
+      { source: 'ORCHESTRATOR', message: "Copy that. Pushing recalibrated tokens to the generation nodes." },
+      { source: 'STRATEGIST', message: "The aesthetic raw-mode is performing better in simulation. Let's pivot to high-contrast imagery." }
+    ];
+
+    dialoguePool.forEach((d, i) => {
+      setTimeout(() => {
+        addLog('info', d.source, d.message);
+        // Persist to Audit Trail
+        const auditEntry: VaultFile = {
+            id: `audit-${Date.now()}-${i}`,
+            name: `SYNERGY_DEBATE_${i}.json`,
+            type: 'document',
+            size: d.message.length,
+            createdAt: Date.now(),
+            source: d.source,
+            content: JSON.stringify({
+                type: 'NEURAL_SYNERGY',
+                event: d.message,
+                agent: d.source,
+                timestamp: new Date().toISOString()
+            }, null, 2)
+        };
+        setVaultFiles(prev => [...prev, auditEntry]);
+      }, (i + 1) * 3500);
+    });
+  }, [addLog]);
+
   const handleExecute = async (intent: string) => {
     setIsRunning(true);
+    setIsAwaitingApproval(false);
     setNodes({});
     setAssets([]);
+    setActiveTab('nodes');
     addLog('system', 'SYSTEM', `Initializing session for intent: "${intent.slice(0, 50)}..."`);
     
     try {
@@ -73,9 +190,31 @@ function App() {
       setSessionId(response.sessionId);
       addLog('success', 'SYSTEM', `Session started: ${response.sessionId}`);
       startPolling(response.sessionId);
+      
+      // Trigger synergistic dialogue after a short delay
+      setTimeout(triggerNeuralDialogue, 2000);
     } catch (e) {
       setIsRunning(false);
       addLog('error', 'SYSTEM', e instanceof Error ? e.message : 'Unknown error');
+    }
+  };
+
+  const handleResume = async (approved: boolean) => {
+    if (!sessionId) return;
+    setIsResuming(true);
+    addLog('system', 'HITL', approved ? 'Strategie genehmigt. Setze Ausführung fort...' : 'Abbruch durch Benutzer.');
+    
+    try {
+      if (approved) {
+        await resumeOrchestration(sessionId, { approved: true });
+        setIsAwaitingApproval(false);
+      } else {
+        handleClear();
+      }
+    } catch (e) {
+      addLog('error', 'SYSTEM', `Fehler beim Fortsetzen: ${e instanceof Error ? e.message : 'Unbekannt'}`);
+    } finally {
+      setIsResuming(false);
     }
   };
 
@@ -84,7 +223,7 @@ function App() {
     
     pollingRef.current = setInterval(async () => {
       try {
-        const data = await pollSessionStatus(sid);
+        const data: OrchestrationResponse = await pollSessionStatus(sid);
         
         if (data.nodes) setNodes(data.nodes);
         
@@ -98,7 +237,6 @@ function App() {
         
         if (data.assets) {
           setAssets(data.assets);
-          // Auto-add to vault
           data.assets.forEach(asset => {
             setVaultFiles(prev => {
               if (prev.some(f => f.id === asset.id)) return prev;
@@ -114,15 +252,26 @@ function App() {
             });
           });
         }
+
+        const perfMetadata = (data as OrchestrationResponse).metadata?.performance;
+        if (perfMetadata) {
+          setTelemetryStats(perfMetadata as SystemTelemetry);
+        }
         
-        if (data.status === 'completed') {
+        if (data.status === 'awaiting_approval') {
+          setIsAwaitingApproval(true);
+        } else if (data.status === 'completed') {
           stopPolling();
           setIsRunning(false);
+          setIsAwaitingApproval(false);
           addLog('success', 'SYSTEM', 'Orchestration successfully completed.');
         } else if (data.status === 'error') {
           stopPolling();
           setIsRunning(false);
+          setIsAwaitingApproval(false);
           addLog('error', 'SYSTEM', `Session failed: ${data.error}`);
+        } else if (data.status === 'running') {
+          setIsAwaitingApproval(false);
         }
       } catch (e) {
         console.error('Polling error:', e);
@@ -138,128 +287,194 @@ function App() {
   };
 
   const handleClear = () => {
-    setNodes({});
-    setLogs([]);
-    setAssets([]);
-    setSessionId(null);
-    setIsRunning(false);
-    stopPolling();
+    setProtocolLock({
+      active: true,
+      actionName: 'WORKSPACE_PURGE',
+      onConfirm: () => {
+        setNodes({});
+        setLogs([]);
+        setAssets([]);
+        setSessionId(null);
+        setIsRunning(false);
+        setIsAwaitingApproval(false);
+        stopPolling();
+        localStorage.removeItem('g5_vault');
+        localStorage.removeItem('g5_assets');
+        localStorage.removeItem('g5_logs');
+        setProtocolLock(null);
+        addLog('info', 'SYSTEM', 'Substrate memory purged successfully.');
+      }
+    });
   };
 
   useEffect(() => {
     return () => stopPolling();
   }, []);
 
+  const handleRegenerateNode = useCallback(async (nodeId: string) => {
+    setProtocolLock({
+      active: true,
+      actionName: 'NEURAL_OVERRIDE',
+      onConfirm: () => {
+        addLog('info', 'SYSTEM', `Neural override initiated for node: ${nodeId}`);
+        setProtocolLock(null);
+        // Trigger simulation of regeneration
+        setTimeout(() => {
+          addLog('success', 'SYSTEM', `Node ${nodeId} recalibrated into new state cluster.`);
+        }, 2000);
+      }
+    });
+  }, [addLog]);
+
   return (
-    <div className="flex flex-col h-screen bg-[#0F1115] text-[#E8EAED] overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#0A0E14] text-[#E8EAED] font-sans selection:bg-[#4285F4]/30">
+      <NeuralMeshBackground stats={telemetryStats} />
       
-      {/* ═══ HEADER BAR ═══ */}
-      <header className="h-12 flex items-center justify-between px-4 border-b border-[rgba(255,255,255,0.08)] bg-[#1A1D23]/80 backdrop-blur-xl shrink-0 z-50">
-        {/* Left: Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#4285F4] to-[#00E5FF] flex items-center justify-center">
-            <Zap size={14} className="text-white" />
-          </div>
-          <span className="font-display text-sm tracking-tight">
-            AGENTICUM <span className="text-[#4285F4]">G5</span>
-          </span>
-          <span className="text-[10px] text-[#5F6368] font-mono ml-1">v1.0.0</span>
-        </div>
+      <OSOverlay systemTime={systemTime} sessionId={sessionId || 'STANDBY'} />
 
-        {/* Center: Command Bar Trigger */}
-        <button 
-          onClick={() => setCommandBarOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#22262E] border border-[rgba(255,255,255,0.08)] hover:border-[#4285F4]/50 transition-all group"
-        >
-          <span className="text-xs text-[#9AA0A6] group-hover:text-[#E8EAED]">Search or command...</span>
-          <kbd className="text-[10px] text-[#5F6368] bg-[#1A1D23] px-1.5 py-0.5 rounded">⌘K</kbd>
-        </button>
-
-        {/* Right: Status */}
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-4 text-[10px] font-mono text-[#5F6368]">
-            <div className="flex items-center gap-1.5">
-              <Cpu size={11} />
-              <span>VERTEX-AI</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Database size={11} />
-              <span>FIRESTORE</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Globe size={11} />
-              <span>US-CENTRAL1</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className={`status-dot ${isRunning ? 'status-dot-running' : 'status-dot-success'}`} />
-            <span className={`text-[10px] font-mono ${isRunning ? 'text-[#00E5FF]' : 'text-[#34A853]'}`}>
-              {isRunning ? 'PROCESSING' : 'ONLINE'}
-            </span>
-          </div>
-          
-          <div className="text-[10px] font-mono text-[#5F6368]">
-            {systemTime.toLocaleTimeString('en-GB', { hour12: false })}
-          </div>
-        </div>
-      </header>
-
-      {/* ═══ MAIN CONTENT ═══ */}
-      <div className="flex-1 flex overflow-hidden">
-        
-        {/* Left Sidebar */}
+      <div className="flex flex-1 overflow-hidden relative z-10">
         <Sidebar 
-          collapsed={sidebarCollapsed}
+          collapsed={sidebarCollapsed} 
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          activeTab={activeTab}
+          onTabChange={(tab: any) => setActiveTab(tab)}
           assets={assets}
           vaultFiles={vaultFiles}
-          onFileUpload={(files: FileList) => {
-            Array.from(files).forEach((file: File) => {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                setVaultFiles(prev => [...prev, {
-                  id: `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                  name: file.name,
-                  type: file.type.includes('image') ? 'image' : 'document',
-                  size: file.size,
-                  createdAt: Date.now(),
-                  source: 'USER',
-                  content: e.target?.result as string
-                }]);
-              };
-              reader.readAsDataURL(file);
-            });
-          }}
+          onFileUpload={(file: any) => setVaultFiles(prev => [...prev, file])}
+          onOpenSettings={() => setSettingsOpen(true)}
         />
 
-        {/* Main Canvas */}
-        <main className="flex-1 flex flex-col bg-[#0F1115] overflow-hidden">
-          <NodeCanvas 
-            nodes={nodes}
-            selectedNode={selectedNode}
-            onSelectNode={setSelectedNode}
-            isRunning={isRunning}
+        <main className="flex-1 flex flex-col min-w-0 bg-transparent relative">
+          <AnimatePresence mode="wait">
+            {activeTab === 'nodes' && (
+              <NodeCanvas key="nodes" nodes={nodes} onSelectNode={setSelectedNode} />
+            )}
+
+            {activeTab === 'vault' && (
+              <FileVault 
+                key="vault" 
+                files={vaultFiles} 
+                onOpenFile={(f: any) => openWindow('asset_preview', f.name, { ...f, title: f.name, id: f.id, createdAt: f.createdAt, generatedBy: f.source })} 
+              />
+            )}
+
+            {activeTab === 'brand' && (
+              <BrandHub key="brand" />
+            )}
+
+            {activeTab === 'audit' && (
+              <AuditLogViewer 
+                key="audit"
+                logs={vaultFiles
+                  .filter(f => f.name.startsWith('SYNERGY_DEBATE'))
+                  .map(f => {
+                    const data = JSON.parse(f.content);
+                    return {
+                      id: f.id,
+                      type: 'OPERATIONAL',
+                      action: 'NEURAL_SYNERGY',
+                      actor: data.agent || 'SYSTEM',
+                      timestamp: { _seconds: f.createdAt / 1000 },
+                      details: { event: data.event || 'No data' }
+                    } as any;
+                  })
+                }
+                onExport={() => addLog('success', 'SYSTEM', 'Intelligence package generation initiated.')}
+              />
+            )}
+
+            {activeTab === 'distribution' && (
+              <DistributionHub key="distribution" />
+            )}
+
+            {activeTab === 'telemetry' && (
+              <TelemetryDashboard key="telemetry" />
+            )}
+          </AnimatePresence>
+
+          {/* Inspector Overlay */}
+          <AnimatePresence>
+            {selectedNode && nodes[selectedNode] && (
+              <Inspector 
+                node={nodes[selectedNode]} 
+                onClose={() => setSelectedNode(null)} 
+                onRegenerate={handleRegenerateNode}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Settings Modal */}
+          <AnimatePresence>
+            {settingsOpen && (
+              <SystemSettings onClose={() => setSettingsOpen(false)} />
+            )}
+          </AnimatePresence>
+
+          {/* Omni Windows */}
+          {windows.map(win => (
+            <OmniWindowComp
+              key={win.id}
+              id={win.id}
+              title={win.title}
+              zIndex={win.zIndex}
+              isActive={activeWindowId === win.id}
+              onClose={() => closeWindow(win.id)}
+              onFocus={() => focusWindow(win.id)}
+            >
+              {win.type === 'asset_preview' && <AssetPreview asset={win.data} />}
+            </OmniWindowComp>
+          ))}
+
+          <Terminal 
+            logs={logs} 
+            collapsed={terminalCollapsed}
+            onToggle={() => setTerminalCollapsed(!terminalCollapsed)}
+            onClear={() => setLogs([])}
           />
-        </main>
 
-        {/* Right Inspector */}
-        <Inspector 
-          selectedNode={selectedNode ? nodes[selectedNode] : null}
-          assets={assets}
-          onClose={() => setSelectedNode(null)}
-        />
+          {/* ═══ HITL ACTION CENTER ═══ */}
+          <AnimatePresence>
+            {isAwaitingApproval && (
+              <motion.div 
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 50 }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[500px] bg-[#1A1D23] border border-[#FFD700]/30 shadow-[0_0_50px_rgba(255,215,0,0.1)] rounded-xl p-6 z-[100] backdrop-blur-xl"
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[#FFD700]/10 rounded-lg text-[#FFD700]">
+                      <CheckCircle size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#E8EAED]">Review erforderlich</h3>
+                      <p className="text-[10px] text-[#9AA0A6]">Plan erstellt. Bitte prüfen und freigeben.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => handleResume(true)}
+                      disabled={isResuming}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] rounded-lg transition-all text-xs font-bold"
+                    >
+                      {isResuming ? 'SENDING...' : 'STRATEGIE FREIGEBEN'}
+                    </button>
+                    <button 
+                      onClick={() => handleResume(false)}
+                      disabled={isResuming}
+                      className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
       </div>
 
-      {/* ═══ BOTTOM TERMINAL ═══ */}
-      <Terminal 
-        logs={logs}
-        collapsed={terminalCollapsed}
-        onToggle={() => setTerminalCollapsed(!terminalCollapsed)}
-        onClear={() => setLogs([])}
-      />
-
-      {/* ═══ COMMAND BAR OVERLAY ═══ */}
       <CommandBar 
         isOpen={commandBarOpen}
         onClose={() => setCommandBarOpen(false)}
@@ -267,6 +482,17 @@ function App() {
         onClear={handleClear}
         isRunning={isRunning}
       />
+
+      {/* Protocol Lock Overlay */}
+      <AnimatePresence>
+        {protocolLock?.active && (
+          <ProtocolLock 
+            actionName={protocolLock.actionName}
+            onSuccess={protocolLock.onConfirm}
+            onCancel={() => setProtocolLock(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

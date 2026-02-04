@@ -1,50 +1,62 @@
-import { useState } from 'react';
 import type { GeneratedAsset, VaultFile } from '../lib/types';
-import { 
-  ChevronLeft, ChevronRight, Layers, FolderOpen, Clock,
-  FileText, Image, Video, Upload, Download, Award, Film, Palette
+import {
+  ChevronLeft, ChevronRight,
+  FileText, Image, Video, Upload, Download, Award, Film, Palette,
+  Terminal, Layout, Database, Vault, Shield, Share2, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  activeTab: 'nodes' | 'terminal' | 'vault' | 'brand' | 'audit' | 'distribution' | 'telemetry';
+  onTabChange: (tab: 'nodes' | 'terminal' | 'vault' | 'brand' | 'audit' | 'distribution' | 'telemetry') => void;
+  onOpenSettings: () => void;
   assets: GeneratedAsset[];
   vaultFiles: VaultFile[];
   onFileUpload: (files: FileList) => void;
 }
 
-type Tab = 'nodes' | 'vault' | 'history';
+type Tab = 'nodes' | 'terminal' | 'vault' | 'brand' | 'audit' | 'distribution';
 
-export function Sidebar({ collapsed, onToggle, assets, vaultFiles, onFileUpload }: SidebarProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('vault');
-
+export function Sidebar({ collapsed, onToggle, activeTab, onTabChange, assets, vaultFiles, onFileUpload, onOpenSettings }: SidebarProps) {
   const tabs = [
-    { id: 'nodes' as Tab, icon: Layers, label: 'Nodes' },
-    { id: 'vault' as Tab, icon: FolderOpen, label: 'Vault' },
-    { id: 'history' as Tab, icon: Clock, label: 'History' },
+    { id: 'nodes' as Tab, icon: Layout, label: 'Node Canvas' },
+    { id: 'terminal' as Tab, icon: Terminal, label: 'Thinking Trace' },
+    { id: 'vault' as Tab, icon: Vault, label: 'Asset Vault' },
+    { id: 'brand' as Tab, icon: Database, label: 'Brand Hub' },
+    { id: 'audit' as Tab, icon: Shield, label: 'Security & Audit' },
+    { id: 'telemetry' as Tab, icon: Database, label: 'System Telemetry' },
+    { id: 'distribution' as Tab, icon: Share2, label: 'Distribution' },
   ];
 
   return (
-    <aside className={`flex flex-col border-r border-[rgba(255,255,255,0.08)] bg-[#1A1D23] transition-all duration-300 ${collapsed ? 'w-12' : 'w-64'}`}>
+    <aside className={`bg-[#1A1D23] border-r border-[rgba(255,255,255,0.08)] flex flex-col transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
       
-      {/* Tab Bar */}
-      <div className={`flex items-center border-b border-[rgba(255,255,255,0.08)] ${collapsed ? 'flex-col py-2' : 'px-2 py-1'}`}>
+      {/* Tab Bar (Vertical enforced) */}
+      <nav className="flex flex-col border-b border-[rgba(255,255,255,0.08)] p-2 gap-1 px-1.5">
         {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => !collapsed && setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${
-              activeTab === tab.id && !collapsed
-                ? 'bg-[#22262E] text-[#E8EAED]' 
-                : 'text-[#5F6368] hover:text-[#9AA0A6]'
-            } ${collapsed ? 'w-full justify-center' : ''}`}
+            onClick={() => onTabChange(tab.id as any)}
+            className={`flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 group ${
+              activeTab === tab.id 
+                ? 'text-[#E8EAED] bg-[#4285F4]/15 border border-[#4285F4]/30 shadow-[0_0_15px_rgba(66,133,244,0.1)]' 
+                : 'text-[#5F6368] hover:text-[#9AA0A6] hover:bg-[rgba(255,255,255,0.03)] border border-transparent'
+            }`}
+            title={tab.label}
           >
-            <tab.icon size={16} />
-            {!collapsed && <span className="text-xs">{tab.label}</span>}
+            <div className={`shrink-0 transition-transform group-hover:scale-110 ${activeTab === tab.id ? 'text-[#00E5FF]' : ''}`}>
+              <tab.icon size={18} />
+            </div>
+            {!collapsed && (
+              <span className="text-xs font-semibold tracking-tight uppercase truncate">
+                {tab.label}
+              </span>
+            )}
           </button>
         ))}
-      </div>
+      </nav>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
@@ -58,6 +70,7 @@ export function Sidebar({ collapsed, onToggle, assets, vaultFiles, onFileUpload 
               className="h-full overflow-y-auto p-3"
             >
               {activeTab === 'nodes' && <NodesPanel />}
+              {activeTab === 'terminal' && <div className="text-[10px] text-[#5F6368] font-mono p-4">Telemetry Active...</div>}
               {activeTab === 'vault' && (
                 <VaultPanel 
                   assets={assets} 
@@ -65,19 +78,32 @@ export function Sidebar({ collapsed, onToggle, assets, vaultFiles, onFileUpload 
                   onUpload={onFileUpload}
                 />
               )}
-              {activeTab === 'history' && <HistoryPanel />}
+              {activeTab === 'brand' && <div className="text-[10px] text-[#5F6368] font-mono p-4">Brand Hub Control Active...</div>}
+              {activeTab === 'audit' && <div className="text-[10px] text-[#5F6368] font-mono p-4">Security Feed Subsubstrate Active...</div>}
+              {activeTab === 'telemetry' && <div className="text-[10px] text-[#5F6368] font-mono p-4">Telemetry Stream Engaged...</div>}
+              {activeTab === 'distribution' && <div className="text-[10px] text-[#5F6368] font-mono p-4">Distribution Engine Monitoring...</div>}
             </motion.div>
           </AnimatePresence>
         )}
       </div>
 
       {/* Collapse Toggle */}
-      <button 
-        onClick={onToggle}
-        className="p-2 border-t border-[rgba(255,255,255,0.08)] text-[#5F6368] hover:text-[#E8EAED] hover:bg-[#22262E] transition-all"
-      >
-        {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-      </button>
+      <div className="flex flex-col border-t border-[rgba(255,255,255,0.08)]">
+        <button 
+          onClick={onOpenSettings}
+          className="p-3 text-[#5F6368] hover:text-[#4285F4] hover:bg-[#22262E] transition-all flex items-center justify-center gap-3"
+          title="System Settings"
+        >
+          <Settings size={18} />
+          {!collapsed && <span className="text-xs font-medium">Settings</span>}
+        </button>
+        <button 
+          onClick={onToggle}
+          className="p-3 text-[#5F6368] hover:text-[#E8EAED] hover:bg-[#22262E] transition-all flex items-center justify-center"
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </div>
     </aside>
   );
 }
@@ -93,87 +119,64 @@ function NodesPanel() {
 
   return (
     <div className="space-y-1">
-      <div className="text-[10px] text-[#5F6368] uppercase tracking-wider mb-2">Available Nodes</div>
+      <div className="text-[10px] text-[#5F6368] uppercase tracking-wider mb-2 text-center border-b border-white/5 pb-1">Available Nodes</div>
       {nodes.map(node => (
-        <div 
-          key={node.id}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[#22262E] cursor-pointer group transition-all"
-        >
-          <div className="w-2 h-2 rounded-full bg-[#34A853]" />
-          <span className="text-xs font-mono text-[#4285F4]">{node.id}</span>
-          <span className="text-xs text-[#9AA0A6] flex-1">{node.name}</span>
+        <div key={node.id} className="p-2 rounded-lg bg-black/20 border border-white/5 flex items-center justify-between group hover:border-[#34A853]/50 transition-all">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-[#E8EAED]">{node.name}</span>
+            <span className="text-[8px] text-[#5F6368] uppercase">{node.cluster}</span>
+          </div>
+          <span className="text-[9px] font-mono text-[#34A853] opacity-50 group-hover:opacity-100">{node.id}</span>
         </div>
       ))}
     </div>
   );
 }
 
-function VaultPanel({ assets, files, onUpload }: { 
-  assets: GeneratedAsset[]; 
-  files: VaultFile[];
-  onUpload: (files: FileList) => void;
-}) {
+function VaultPanel({ assets, files, onUpload }: { assets: GeneratedAsset[], files: VaultFile[], onUpload: (f: FileList) => void }) {
   const getIcon = (type: string) => {
-    if (type === 'strategy') return <Award size={14} className="text-[#A855F7]" />;
-    if (type === 'video_prompt') return <Film size={14} className="text-pink-400" />;
-    if (type === 'design_blueprint') return <Palette size={14} className="text-orange-400" />;
-    if (type === 'image') return <Image size={14} className="text-green-400" />;
-    if (type === 'video') return <Video size={14} className="text-purple-400" />;
-    return <FileText size={14} className="text-[#4285F4]" />;
+    switch(type) {
+      case 'image': return <Image size={10} />;
+      case 'video': return <Video size={10} />;
+      case 'strategy': return <Award size={10} />;
+      case 'video_prompt': return <Film size={10} />;
+      case 'design_blueprint': return <Palette size={10} />;
+      default: return <FileText size={10} />;
+    }
   };
 
-  const allFiles = [
-    ...assets.map(a => ({ id: a.id, name: a.title, type: a.type, source: a.generatedBy })),
-    ...files.map(f => ({ id: f.id, name: f.name, type: f.type, source: f.source }))
+  const allItems = [
+    ...assets.map(a => ({ id: a.id, title: a.title, subtitle: `By ${a.generatedBy}`, type: a.type })),
+    ...files.map(f => ({ id: f.id, title: f.name, subtitle: `Imported via ${f.source}`, type: f.type || 'file' }))
   ];
 
   return (
-    <div className="space-y-3">
-      {/* Upload Zone */}
-      <label className="flex flex-col items-center justify-center p-4 border border-dashed border-[rgba(255,255,255,0.15)] rounded-lg cursor-pointer hover:border-[#4285F4]/50 hover:bg-[#4285F4]/5 transition-all">
-        <Upload size={18} className="text-[#5F6368] mb-1" />
-        <span className="text-[10px] text-[#5F6368]">Drop or click to upload</span>
-        <input 
-          type="file" 
-          multiple 
-          className="hidden" 
-          onChange={(e) => e.target.files && onUpload(e.target.files)}
-        />
-      </label>
-
-      {/* File List */}
-      <div className="space-y-1">
-        <div className="text-[10px] text-[#5F6368] uppercase tracking-wider">
-          {allFiles.length} Files
-        </div>
-        {allFiles.map(file => (
-          <div 
-            key={file.id}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[#22262E] group transition-all"
-          >
-            {getIcon(file.type)}
-            <span className="text-xs text-[#E8EAED] flex-1 truncate">{file.name}</span>
-            <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#4285F4]/20 rounded transition-all">
-              <Download size={12} className="text-[#4285F4]" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between border-b border-white/5 pb-2">
+        <span className="text-[10px] text-[#5F6368] uppercase tracking-wider">Vault Registry</span>
+        <label className="p-1 hover:bg-white/5 rounded transition-all cursor-pointer">
+          <Upload size={12} className="text-[#34A853]" />
+          <input type="file" multiple className="hidden" onChange={(e) => e.target.files && onUpload(e.target.files)} />
+        </label>
+      </div>
+      <div className="space-y-2">
+        {allItems.map(item => (
+          <div key={item.id} className="p-2 rounded-lg bg-black/20 border border-white/5 flex items-center gap-2 group hover:border-[#34A853]/30 transition-all">
+            <div className="p-1.5 rounded bg-[#34A853]/10 text-[#34A853]">
+              {getIcon(item.type)}
+            </div>
+            <div className="flex-1 truncate">
+              <div className="text-[9px] font-bold text-[#E8EAED] truncate">{item.title}</div>
+              <div className="text-[8px] text-[#5F6368] italic">{item.subtitle}</div>
+            </div>
+            <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/5 rounded text-[#5F6368] transition-all">
+              <Download size={10} />
             </button>
           </div>
         ))}
-        {allFiles.length === 0 && (
-          <div className="text-xs text-[#5F6368] text-center py-4">
-            No files yet
-          </div>
+        {allItems.length === 0 && (
+          <div className="text-[10px] text-[#5F6368] text-center py-8 italic uppercase tracking-widest opacity-30">Registry Empty</div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function HistoryPanel() {
-  return (
-    <div className="space-y-1">
-      <div className="text-[10px] text-[#5F6368] uppercase tracking-wider mb-2">Recent Sessions</div>
-      <div className="text-xs text-[#5F6368] text-center py-4">
-        No history yet
       </div>
     </div>
   );

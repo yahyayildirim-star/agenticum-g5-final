@@ -130,3 +130,30 @@ export async function generateImage(prompt: string): Promise<{
     mimeType: prediction.mimeType || "image/png",
   };
 }
+
+/**
+ * ─── Enterprise Context Injection ────────────────────────────
+ * Augments a standard prompt with Brand DNA and historical insights.
+ */
+export function augmentPromptWithContext(
+  prompt: string, 
+  context: { brandDNA: string; historicalInsights: string[] }
+): string {
+  const insightsText = context.historicalInsights.length > 0 
+    ? `HISTORICAL INSIGHTS:\n- ${context.historicalInsights.join("\n- ")}`
+    : "No historical insights available for this context.";
+
+  return `
+SYSTEM CONTEXT (BRAND DNA):
+${context.brandDNA}
+
+${insightsText}
+
+USER REQUEST:
+${prompt}
+
+ADHERENCE RULE:
+You MUST align your response with the Brand DNA and build upon historical insights if provided.
+Maintain the professional, high-end "G5" tone.
+`.trim();
+}

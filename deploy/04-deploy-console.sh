@@ -42,17 +42,17 @@ echo "[5/5] Upload auf Cloud Storage..."
 # index.html ohne Cache
 gsutil -h "Cache-Control:public,max-age=0" \
   -h "Content-Type:text/html;charset=UTF-8" \
-  cp dist/index.html gs://$PROJECT_ID-console/index.html
+  cp dist/index.html gs://$PROJECT_ID-console-us/index.html
 
 # Alle anderen Assets mit langem Cache
 gsutil -m -h "Cache-Control:public,max-age=31536000" \
-  rsync -r -x "^index\.html$" dist/ gs://$PROJECT_ID-console/
+  rsync -r -x "^index\.html$" dist/ gs://$PROJECT_ID-console-us/
 
 # Website config
 cat > /tmp/website.json << EOF
 { "mainPageSuffix": "index.html", "notFoundPage": "index.html" }
 EOF
-gsutil web -m /tmp/website.json gs://$PROJECT_ID-console
+gsutil web -m /tmp/website.json gs://$PROJECT_ID-console-us
 
 echo ""
 echo "  ✅ Console App LIVE:"

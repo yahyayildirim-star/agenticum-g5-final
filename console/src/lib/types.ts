@@ -1,6 +1,6 @@
 export type NodeId = "SP-01" | "CC-06" | "RA-01" | "SN-00" | "DA-03";
 
-export type NodeStatus = "idle" | "initializing" | "running" | "completed" | "error";
+export type NodeStatus = "idle" | "initializing" | "running" | "completed" | "error" | "awaiting_approval";
 
 export interface NodeState {
   id: NodeId;
@@ -20,12 +20,13 @@ export interface OrchestrationRequest {
 
 export interface OrchestrationResponse {
   sessionId: string;
-  status: "started" | "running" | "completed" | "error";
+  status: "started" | "running" | "completed" | "error" | "awaiting_approval";
   nodes: Record<string, NodeState>;
   executionPlan?: string[];
   finalResult?: string;
   logs?: LogEntry[];
   assets?: GeneratedAsset[];
+  metadata?: any;
   error?: string;
 }
 
@@ -65,4 +66,15 @@ export interface VaultFile {
   source: string;
   content?: string;
   url?: string;
+}
+
+export type WindowType = "asset_preview" | "document_editor" | "system_monitor";
+
+export interface OmniWindow {
+  id: string;
+  type: WindowType;
+  title: string;
+  zIndex: number;
+  isMinimized: boolean;
+  data: any;
 }

@@ -38,7 +38,7 @@ export function Sidebar({ collapsed, onToggle, activeTab, onTabChange, assets, v
         {tabs.map(tab => (
           <button
             key={tab.id}
-            onClick={() => onTabChange(tab.id as any)}
+            onClick={() => onTabChange(tab.id)}
             className={`flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 group ${
               activeTab === tab.id 
                 ? 'text-[#E8EAED] bg-[#4285F4]/15 border border-[#4285F4]/30 shadow-[0_0_15px_rgba(66,133,244,0.1)]' 

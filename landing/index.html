@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENTICUM G5 | Autonomous Marketing OS</title>
+  <meta name="description" content="The end of tool-using. Deploy your autonomous marketing operating system.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #030508;
+      --bg-secondary: #0a0e14;
+      --bg-card: rgba(12, 16, 24, 0.8);
+      --accent-cyan: #00f0ff;
+      --accent-green: #00ff88;
+      --accent-purple: #a855f7;
+      --accent-orange: #ff6b35;
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-glow: rgba(0,240,255,0.3);
+      --gradient-hero: linear-gradient(135deg, #030508 0%, #0a1628 50%, #030508 100%);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    .font-display { font-family: 'Orbitron', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* === GLOBAL HEADER === */
+    .global-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(3,5,8,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-text {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 2px;
+    }
+    .logo-text span { color: var(--accent-cyan); }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.4); }
+      50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(0,255,136,0); }
+    }
+    .nav-cta {
+      padding: 0.625rem 1.5rem;
+      background: transparent;
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .nav-cta:hover {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      box-shadow: 0 0 30px rgba(0,240,255,0.4);
+    }
+
+    /* === HERO === */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: var(--gradient-hero);
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(60px, 60px); }
+    }
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.4;
+    }
+    .orb-1 {
+      width: 600px;
+      height: 600px;
+      background: var(--accent-cyan);
+      top: -200px;
+      right: -200px;
+      opacity: 0.15;
+    }
+    .orb-2 {
+      width: 400px;
+      height: 400px;
+      background: var(--accent-purple);
+      bottom: -100px;
+      left: -100px;
+      opacity: 0.2;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 900px;
+      padding: 2rem;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(0,240,255,0.1);
+      border: 1px solid rgba(0,240,255,0.2);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      margin-bottom: 2rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .hero-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-title .accent {
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 3rem;
+      line-height: 1.8;
+    }
+    .hero-cta-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      padding: 1rem 2.5rem;
+      background: linear-gradient(135deg, var(--accent-cyan), #0099cc);
+      border: none;
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(0,240,255,0.4);
+    }
+    .btn-secondary {
+      padding: 1rem 2.5rem;
+      background: transparent;
+      border: 1px solid var(--border-glow);
+      color: var(--text-primary);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(0,240,255,0.1);
+    }
+    .hero-metrics {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-top: 4rem;
+      padding-top: 3rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .metric {
+      text-align: center;
+    }
+    .metric-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+    .metric-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 0.25rem;
+    }
+
+    /* === SECTION COMMON === */
+    .section {
+      padding: 8rem 2rem;
+      position: relative;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      letter-spacing: 2px;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* === PROBLEM SECTION === */
+    .problem-section {
+      background: var(--bg-secondary);
+    }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+    .problem-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .problem-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-orange), transparent);
+    }
+    .problem-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,107,53,0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      color: var(--accent-orange);
+      font-size: 1.5rem;
+    }
+    .problem-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .problem-desc {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* === NODES SECTION === */
+    .nodes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .node-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 2rem;
+      transition: all 0.4s ease;
+      position: relative;
+    }
+    .node-card:hover {
+      border-color: var(--accent-cyan);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 60px rgba(0,240,255,0.1);
+    }
+    .node-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .node-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      background: rgba(0,240,255,0.1);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+    .node-status {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      margin-left: auto;
+    }
+    .node-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+    .node-desc {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    .node-capability {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.7rem;
+      color: var(--accent-green);
+      background: rgba(0,255,136,0.1);
+      padding: 0.25rem 0.625rem;
+      border-radius: 100px;
+    }
+
+    /* === WORKFLOW SECTION === */
+    .workflow-section {
+      background: var(--bg-secondary);
+    }
+    .workflow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .workflow-steps::before {
+      content: '';
+      position: absolute;
+      left: 24px;
+      top: 40px;
+      bottom: 40px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--accent-cyan), var(--accent-purple));
+    }
+    .workflow-step {
+      display: flex;
+      gap: 2rem;
+      padding: 2rem 0;
+    }
+    .step-number {
+      width: 50px;
+      height: 50px;
+      background: var(--bg-primary);
+      border: 2px solid var(--accent-cyan);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+    }
+    .step-content h4 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+    .step-content p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* === TECH SECTION === */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .tech-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .tech-item:hover {
+      border-color: var(--accent-cyan);
+    }
+    .tech-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    .tech-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+    .tech-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* === CTA SECTION === */
+    .cta-section {
+      background: linear-gradient(135deg, #0a1628 0%, #030508 100%);
+      text-align: center;
+      padding: 10rem 2rem;
+    }
+    .cta-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+    }
+    .cta-subtitle {
+      color: var(--text-secondary);
+      font-size: 1.125rem;
+      margin-bottom: 3rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* === FOOTER === */
+    .footer {
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border-subtle);
+      padding: 3rem 2rem;
+    }
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-brand {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.3s;
+    }
+    .footer-links a:hover {
+      color: var(--accent-cyan);
+    }
+    .footer-version {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+      .global-header { padding: 1rem; }
+      .hero-metrics { flex-direction: column; gap: 1.5rem; }
+      .workflow-steps::before { display: none; }
+      .workflow-step { flex-direction: column; gap: 1rem; }
+      .footer-content { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- GLOBAL HEADER -->
+  <header class="global-header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">AGENTICUM <span>G5</span></div>
+    </div>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span>SYSTEM ONLINE</span>
+    </div>
+    <a href="https://storage.googleapis.com/tutorai-e39uu-console-us/index.html" class="nav-cta">LAUNCH CONSOLE</a>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-grid"></div>
+      <div class="hero-orb orb-1"></div>
+      <div class="hero-orb orb-2"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span>🚀</span>
+        <span>GOOGLE DEEPMIND GEMINI HACKATHON 2025</span>
+      </div>
+      <h1 class="hero-title">THE END OF<br><span class="accent">TOOL-USING</span></h1>
+      <p class="hero-subtitle">Deploy your autonomous marketing operating system. One intent. Four AI agents. Complete campaign execution in under 30 seconds.</p>
+      <div class="hero-cta-group">
+        <a href="https://storage.googleapis.com/tutorai-e39uu-console-us/index.html" class="btn-primary">INITIATE SEQUENCE →</a>
+        <a href="#how-it-works" class="btn-secondary">VIEW ARCHITECTURE</a>
+      </div>
+      <div class="hero-metrics">
+        <div class="metric">
+          <div class="metric-value">&lt;30s</div>
+          <div class="metric-label">Execution Time</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value">4</div>
+          <div class="metric-label">Autonomous Agents</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value">100%</div>
+          <div class="metric-label">Google Cloud</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="section problem-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">/// THE CRISIS</div>
+        <h2 class="section-title">Integration Friction Kills Velocity</h2>
+        <p class="section-desc">You are the biological glue between disconnected tools. Copy. Paste. Wait. Repeat. This is cognitive debt.</p>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-icon">🔗</div>
+          <h3 class="problem-title">Tool Fragmentation</h3>
+          <p class="problem-desc">Slack, Trello, Figma, Analytics, Ads Manager — each requires manual bridging. Your brain is the middleware.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">⏱️</div>
+          <h3 class="problem-title">Latency Tax</h3>
+          <p class="problem-desc">From briefing to first asset: 2-5 days. Context switching, approvals, revisions. Time compounds against you.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">🧠</div>
+          <h3 class="problem-title">Cognitive Overload</h3>
+          <p class="problem-desc">Strategic thinking drowns in operational noise. You're trained to execute, not to architect.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NODES -->
+  <section class="section" id="system-nodes">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">/// NEURAL NETWORK</div>
+        <h2 class="section-title">The 52-Node Architecture</h2>
+        <p class="section-desc">Decentralized intelligence as an organic swarm. Each node is specialized. Together, they are unstoppable.</p>
+      </div>
+      <div class="nodes-grid">
+        <div class="node-card">
+          <div class="node-header">
+            <span class="node-id">SN-00</span>
+            <div class="node-status"></div>
+          </div>
+          <h3 class="node-name">Orchestrator</h3>
+          <p class="node-desc">The conductor. Analyzes intent, creates execution plan, coordinates all agents.</p>
+          <span class="node-capability">✦ Thinking Mode</span>
+        </div>
+        <div class="node-card">
+          <div class="node-header">
+            <span class="node-id">SP-01</span>
+            <div class="node-status"></div>
+          </div>
+          <h3 class="node-name">Campaign Strategist</h3>
+          <p class="node-desc">Builds data-driven strategies with real-time market intelligence.</p>
+          <span class="node-capability">✦ Search Grounding</span>
+        </div>
+        <div class="node-card">
+          <div class="node-header">
+            <span class="node-id">RA-01</span>
+            <div class="node-status"></div>
+          </div>
+          <h3 class="node-name">Authority Auditor</h3>
+          <p class="node-desc">Competitive intelligence. Market gaps. Differentiation strategy.</p>
+          <span class="node-capability">✦ Search Grounding</span>
+        </div>
+        <div class="node-card">
+          <div class="node-header">
+            <span class="node-id">CC-06</span>
+            <div class="node-status"></div>
+          </div>
+          <h3 class="node-name">Video Director</h3>
+          <p class="node-desc">Cinematic concepts.Veo-optimized prompts. Soundscape design.</p>
+          <span class="node-capability">✦ Multimodal</span>
+        </div>
+        <div class="node-card">
+          <div class="node-header">
+            <span class="node-id">DA-03</span>
+            <div class="node-status"></div>
+          </div>
+          <h3 class="node-name">Design Architect</h3>
+          <p class="node-desc">Visual identity. Color systems. Image generation prompts.</p>
+          <span class="node-capability">✦ Creative AI</span>
+        </div>
+        <div class="node-card" style="border-style: dashed; opacity: 0.6;">
+          <div class="node-header">
+            <span class="node-id">MI-01</span>
+            <div class="node-status" style="background: var(--text-muted);"></div>
+          </div>
+          <h3 class="node-name">Ethics Guardian</h3>
+          <p class="node-desc">Algorithmic Senate. Veto power against dark patterns.</p>
+          <span class="node-capability" style="background: rgba(255,255,255,0.05); color: var(--text-muted);">◇ Coming Soon</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORKFLOW -->
+  <section class="section workflow-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">/// OPERATIONAL FLOW</div>
+        <h2 class="section-title">From Intent to Execution</h2>
+        <p class="section-desc">One sentence. Four agents. Complete autonomy.</p>
+      </div>
+      <div class="workflow-steps">
+        <div class="workflow-step">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <h4>Define Your Intent</h4>
+            <p>Describe your campaign goal in natural language. "Create a viral LinkedIn campaign for AI startups targeting CTOs."</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <h4>Orchestration</h4>
+            <p>SN-00 analyzes your intent using Thinking Mode. Creates an optimized execution plan. Activates required nodes.</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <h4>Parallel Execution</h4>
+            <p>SP-01 and RA-01 work simultaneously. Real-time data. Market research. Strategy formulation. Zero wait time.</p>
+          </div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-number">04</div>
+          <div class="step-content">
+            <h4>Asset Delivery</h4>
+            <p>CC-06 and DA-03 produce video concepts, visual identities, and image prompts. Complete campaign package delivered.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TECH -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">/// INFRASTRUCTURE</div>
+        <h2 class="section-title">Alphabet-Native Stack</h2>
+        <p class="section-desc">Maximum performance through modal coherence. Zero external dependencies.</p>
+      </div>
+      <div class="tech-grid">
+        <div class="tech-item">
+          <div class="tech-icon">🧠</div>
+          <div class="tech-name">Gemini 2.0 Flash</div>
+          <div class="tech-desc">Reasoning Engine</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">🔍</div>
+          <div class="tech-name">Search Grounding</div>
+          <div class="tech-desc">Real-Time Data</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">💭</div>
+          <div class="tech-name">Thinking Mode</div>
+          <div class="tech-desc">Deep Reasoning</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">⚡</div>
+          <div class="tech-name">Cloud Functions</div>
+          <div class="tech-desc">Serverless Backend</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">🔥</div>
+          <div class="tech-name">Firestore</div>
+          <div class="tech-desc">Real-Time Database</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-icon">☁️</div>
+          <div class="tech-name">Vertex AI</div>
+          <div class="tech-desc">Enterprise ML</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2 class="cta-title">READY TO BECOME AN ARCHITECT?</h2>
+    <p class="cta-subtitle">Stop being the glue. Start being the brain. Deploy your autonomous operating system now.</p>
+    <a href="https://storage.googleapis.com/tutorai-e39uu-console-us/index.html" class="btn-primary">DEPLOY YOUR TWIN →</a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-brand">AGENTICUM G5 — Autonomous Marketing OS</div>
+      <div class="footer-links">
+        <a href="#system-nodes">System Nodes</a>
+        <a href="#how-it-works">Architecture</a>
+        <a href="https://github.com">GitHub</a>
+      </div>
+      <div class="footer-version">v1.0.0 // Built for Google DeepMind Gemini Hackathon 2025</div>
+    </div>
+  </footer>
+
+</body>
+</html>

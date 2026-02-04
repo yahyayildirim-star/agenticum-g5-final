@@ -637,6 +637,7 @@
       <div class="hero-cta-group">
         <a href="__CONSOLE_URL__" class="btn-primary">INITIATE SEQUENCE →</a>
         <a href="#how-it-works" class="btn-secondary">VIEW ARCHITECTURE</a>
+        <button onclick="startAutoDemo()" class="btn-secondary" style="border-color: var(--accent-purple); color: var(--accent-purple);">GUIDED DEMO ◈</button>
       </div>
       <div class="hero-metrics">
         <div class="metric">
@@ -861,5 +862,38 @@
     </div>
   </footer>
 
+  <script>
+    function startAutoDemo() {
+      const targets = [
+        '.problem-section',
+        '#system-nodes',
+        '#how-it-works',
+        '.tech-grid',
+        '.cta-section',
+        '.footer'
+      ];
+      
+      let delay = 3500; // 3.5 seconds per section
+      
+      console.log("Initializing Guided Sequence...");
+      
+      targets.forEach((selector, index) => {
+        setTimeout(() => {
+          const el = document.querySelector(selector);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Visual feedback
+            if (selector !== '.footer') {
+              el.style.transition = 'background 0.5s ease';
+              const originalBg = el.style.background;
+              el.style.background = 'rgba(168, 85, 247, 0.05)';
+              setTimeout(() => { el.style.background = originalBg; }, 2000);
+            }
+          }
+        }, index * delay);
+      });
+    }
+  </script>
 </body>
 </html>

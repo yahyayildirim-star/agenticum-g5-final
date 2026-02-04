@@ -17,7 +17,7 @@ sed -i "s|__CONSOLE_URL__|$CONSOLE_URL|g" index.html
 
 # Upload
 echo "[2/3] Upload auf Cloud Storage..."
-gsutil -h "Cache-Control:public,max-age=300" \
+gsutil -h "Cache-Control:public,max-age=0" \
   -h "Content-Type:text/html;charset=UTF-8" \
   cp index.html gs://$PROJECT_ID-landing/index.html
 

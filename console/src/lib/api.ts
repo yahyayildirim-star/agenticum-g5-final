@@ -2,6 +2,7 @@ import type { OrchestrationRequest, OrchestrationResponse } from "./types";
 
 const ORCHESTRATE_URL = import.meta.env.VITE_ORCHESTRATE_URL;
 const NODE_STATUS_URL = import.meta.env.VITE_NODE_STATUS_URL;
+const RESUME_URL = import.meta.env.VITE_RESUME_URL;
 
 // ─── Orchestration starten ───────────────────────────────────
 export async function startOrchestration(
@@ -42,10 +43,10 @@ export async function resumeOrchestration(
   sessionId: string,
   approvalData: Record<string, unknown> = {}
 ): Promise<OrchestrationResponse> {
-  const response = await fetch(`${ORCHESTRATE_URL}/resume`, {
+  const response = await fetch(RESUME_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId, ...approvalData }),
+    body: JSON.stringify({ sessionId, approved: true, ...approvalData }),
   });
 
   if (!response.ok) {

@@ -139,3 +139,56 @@ functions.http("evaluate", (req, res) => {
 functions.http("health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// ─── POST /tts (Text-to-Speech) ───────────────────────────────
+functions.http("tts", (req, res) => {
+  corsHandler(req, res, async () => {
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Use POST" });
+      return;
+    }
+    try {
+      const { text, languageCode, voiceName } = req.body as { 
+        text?: string; 
+        languageCode?: string; 
+        voiceName?: string;
+      };
+      
+      if (!text || typeof text !== "string") {
+        res.status(400).json({ error: "'text' required (string)" });
+        return;
+      }
+
+      const { generateSpeech } = await import("./vertex-ai-client");
+      const { audioBase64, mimeType } = await generateSpeech(text, { languageCode, voiceName });
+      
+      // Upload to Cloud Storage
+      const { Storage } = await import("@google-cloud/storage");
+      const storage = new Storage();
+      const bucket = storage.bucket(process.env.ASSETS_BUCKET || "tutorai-e39uu-assets");
+      const filename = `audio/tts-${Date.now()}.mp3`;
+      const blob = bucket.file(filename);
+      
+      const audioBuffer = Buffer.from(audioBase64, "base64");
+      await blob.save(audioBuffer, {
+        metadata: {
+          contentType: mimeType,
+          cacheControl: "public, max-age=31536000",
+        },
+      });
+      await blob.makePublic();
+      
+      const audioUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+      
+      res.status(200).json({ 
+        success: true, 
+        audioUrl,
+        mimeType,
+        textLength: text.length,
+      });
+    } catch (error) {
+      console.error("TTS error:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : "TTS failed" });
+    }
+  });
+});

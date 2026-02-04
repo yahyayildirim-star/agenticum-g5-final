@@ -131,6 +131,66 @@ export async function generateImage(prompt: string): Promise<{
   };
 }
 
+// ─── Google Cloud TTS (Text-to-Speech) ───────────────────────
+export async function generateSpeech(
+  text: string,
+  options: {
+    languageCode?: string;
+    voiceName?: string;
+    speakingRate?: number;
+  } = {}
+): Promise<{
+  audioBase64: string;
+  mimeType: string;
+}> {
+  const { GoogleAuth } = await import("google-auth-library");
+  const auth = new GoogleAuth({
+    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+  });
+  const client = await auth.getClient();
+  const token = await client.getAccessToken();
+
+  const endpoint = "https://texttospeech.googleapis.com/v1/text:synthesize";
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token.token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      input: { text },
+      voice: {
+        languageCode: options.languageCode || "en-US",
+        name: options.voiceName || "en-US-Neural2-J", // High-quality neural voice
+        ssmlGender: "MALE",
+      },
+      audioConfig: {
+        audioEncoding: "MP3",
+        speakingRate: options.speakingRate || 1.0,
+        pitch: 0,
+        effectsProfileId: ["large-automotive-class-device"], // Optimized for quality
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`TTS API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.audioContent) {
+    throw new Error("TTS returned no audio content");
+  }
+
+  return {
+    audioBase64: data.audioContent,
+    mimeType: "audio/mpeg",
+  };
+}
+
 /**
  * ─── Enterprise Context Injection ────────────────────────────
  * Augments a standard prompt with Brand DNA and historical insights.

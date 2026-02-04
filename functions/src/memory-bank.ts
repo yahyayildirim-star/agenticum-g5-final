@@ -37,13 +37,24 @@ export async function saveToMemory(sessionId: string, entry: MemoryEntry) {
  */
 export async function queryMemory(tags: string[]): Promise<MemoryEntry[]> {
   const coll = firestore.collection("memory_bank");
-  // Simple tag-based query for now. In a full enterprise build, this would use Vector Search.
-  const snapshot = await coll.where("relevanceTags", "array-contains-any", tags)
-    .orderBy("createdAt", "desc")
-    .limit(5)
-    .get();
+  
+  // Simplified query: just get by tags, sort in memory to avoid composite index requirement
+  try {
+    const snapshot = await coll.where("relevanceTags", "array-contains-any", tags)
+      .limit(10)
+      .get();
+      
+    const entries = snapshot.docs.map(doc => doc.data() as MemoryEntry);
     
-  return snapshot.docs.map(doc => doc.data() as MemoryEntry);
+    // Sort in memory by createdAt descending
+    entries.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    
+    return entries.slice(0, 5);
+  } catch (error) {
+    // If query fails (no data or other issue), return empty array gracefully
+    console.warn("Memory query failed, returning empty:", error);
+    return [];
+  }
 }
 
 /**

@@ -8,9 +8,10 @@ interface FileVaultProps {
   onUpload: (files: FileList) => void;
   onDownload: (file: VaultFile) => void;
   onDelete: (fileId: string) => void;
+  onOpenFile: (file: VaultFile) => void;
 }
 
-export function FileVault({ files, onUpload, onDownload, onDelete }: FileVaultProps) {
+export function FileVault({ files, onUpload, onDownload, onDelete, onOpenFile }: FileVaultProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const getIcon = (type: VaultFile['type']) => {
@@ -75,7 +76,8 @@ export function FileVault({ files, onUpload, onDownload, onDelete }: FileVaultPr
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="bg-gray-900/50 border border-gray-800 hover:border-gray-700 rounded-lg p-3 group transition-all"
+                onClick={() => onOpenFile(file)}
+                className="bg-gray-900/50 border border-gray-800 hover:border-gray-700 rounded-lg p-3 group transition-all cursor-pointer"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0">

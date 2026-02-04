@@ -124,8 +124,10 @@ export function NodeCanvas({ nodes, selectedNode, onSelectNode, isRunning }: Nod
 
             {/* Dynamic Connecting Paths */}
             {agents.map((_node, i) => {
-              const xStart = '50%';
-              const xEnd = `${12.5 + i * 25}%`;
+              // SVG paths require numeric values, not percentages
+              // Using viewBox coordinates (0-100 range)
+              const xStart = 50;
+              const xEnd = 12.5 + i * 25;
               return (
                 <g key={`path-${i}`}>
                    <motion.path

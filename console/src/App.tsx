@@ -6,7 +6,6 @@ import {
   Inspector, 
   Terminal, 
   BrandHub, 
-  PerformanceMetrics, 
   AuditLogViewer, 
   DistributionHub, 
   SystemSettings, 
@@ -21,7 +20,7 @@ import {
 } from './components';
 import { startOrchestration, pollSessionStatus, resumeOrchestration } from './lib/api';
 import type { NodeState, LogEntry, GeneratedAsset, VaultFile, OrchestrationResponse, OmniWindow, WindowType } from './lib/types';
-import { Cpu, Zap, Database, CheckCircle, XCircle, Terminal as TerminalIcon } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -119,7 +118,7 @@ function App() {
   // ════ WINDOW MANAGEMENT ════
   const openWindow = (type: WindowType, title: string, data: GeneratedAsset) => {
     const id = `win-${Math.random().toString(36).substr(2, 9)}`;
-    const maxZ = windows.length > 0 ? Math.max(...windows.map(w => w.zIndex)) : 100;
+    const maxZ = windows.length > 0 ? Math.max(...windows.map(w => w.zIndex)) : 200;
     const newWindow: OmniWindow = {
       id,
       type,
@@ -240,10 +239,16 @@ function App() {
           data.assets.forEach(asset => {
             setVaultFiles(prev => {
               if (prev.some(f => f.id === asset.id)) return prev;
+              
+              // Map asset type to vault type
+              let vaultType: VaultFile['type'] = 'document';
+              if (asset.type === 'design_blueprint') vaultType = 'image';
+              if (asset.type === 'video_prompt') vaultType = 'video';
+              
               return [...prev, {
                 id: asset.id,
                 name: `${asset.title}.md`,
-                type: 'document',
+                type: vaultType,
                 size: asset.content.length,
                 createdAt: asset.createdAt,
                 source: asset.generatedBy,
@@ -330,31 +335,65 @@ function App() {
     <div className="flex flex-col h-screen bg-[#0A0E14] text-[#E8EAED] font-sans selection:bg-[#4285F4]/30">
       <NeuralMeshBackground stats={telemetryStats} />
       
-      <OSOverlay systemTime={systemTime} sessionId={sessionId || 'STANDBY'} />
-
       <div className="flex flex-1 overflow-hidden relative z-10">
         <Sidebar 
           collapsed={sidebarCollapsed} 
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           activeTab={activeTab}
           onTabChange={(tab: any) => setActiveTab(tab)}
+          onOpenAsset={(asset: GeneratedAsset) => openWindow('asset_preview', asset.title, asset)}
           assets={assets}
           vaultFiles={vaultFiles}
           onFileUpload={(file: any) => setVaultFiles(prev => [...prev, file])}
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenCommand={() => setCommandBarOpen(true)}
         />
 
         <main className="flex-1 flex flex-col min-w-0 bg-transparent relative">
           <AnimatePresence mode="wait">
             {activeTab === 'nodes' && (
-              <NodeCanvas key="nodes" nodes={nodes} onSelectNode={setSelectedNode} />
+              <NodeCanvas 
+                key="nodes" 
+                nodes={nodes} 
+                selectedNode={selectedNode}
+                isRunning={!!sessionId}
+                onSelectNode={setSelectedNode} 
+              />
             )}
 
             {activeTab === 'vault' && (
               <FileVault 
                 key="vault" 
                 files={vaultFiles} 
-                onOpenFile={(f: any) => openWindow('asset_preview', f.name, { ...f, title: f.name, id: f.id, createdAt: f.createdAt, generatedBy: f.source })} 
+                onUpload={(files) => {
+                  Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      const newFile = {
+                        id: Math.random().toString(36).substr(2, 9),
+                        name: file.name,
+                        type: file.type.split('/')[0] as any,
+                        size: file.size,
+                        source: 'Local Upload',
+                        createdAt: Date.now(),
+                        content: e.target?.result as string
+                      };
+                      setVaultFiles(prev => [...prev, newFile]);
+                    };
+                    reader.readAsText(file);
+                  });
+                }}
+                onDownload={(f) => {
+                  const blob = new Blob([f.content || ''], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = f.name;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                onDelete={(id) => setVaultFiles(prev => prev.filter(f => f.id !== id))}
+                onOpenFile={(f: any) => openWindow('asset_preview', (f.name as string) || 'Untitled', { ...f, title: f.name, id: f.id, createdAt: f.createdAt, generatedBy: f.source })} 
               />
             )}
 
@@ -368,7 +407,12 @@ function App() {
                 logs={vaultFiles
                   .filter(f => f.name.startsWith('SYNERGY_DEBATE'))
                   .map(f => {
-                    const data = JSON.parse(f.content);
+                    let data: any = {};
+                    try {
+                      data = JSON.parse(f.content || '{}');
+                    } catch {
+                      data = { event: f.content };
+                    }
                     return {
                       id: f.id,
                       type: 'OPERATIONAL',
@@ -396,9 +440,11 @@ function App() {
           <AnimatePresence>
             {selectedNode && nodes[selectedNode] && (
               <Inspector 
-                node={nodes[selectedNode]} 
+                selectedNode={nodes[selectedNode]} 
+                assets={assets}
                 onClose={() => setSelectedNode(null)} 
-                onRegenerate={handleRegenerateNode}
+                onOpenAsset={(asset) => openWindow('asset_preview', asset.title, asset)}
+                onRegenerateNode={handleRegenerateNode}
               />
             )}
           </AnimatePresence>
@@ -493,6 +539,8 @@ function App() {
           />
         )}
       </AnimatePresence>
+
+      <OSOverlay systemTime={systemTime} sessionId={sessionId || 'STANDBY'} />
     </div>
   );
 }

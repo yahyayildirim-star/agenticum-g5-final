@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { X, Minus, Square, Maximize2 } from 'lucide-react';
 import React, { useState } from 'react';
+import { useDragControls } from 'framer-motion';
 
 interface OmniWindowProps {
   id: string;
@@ -14,10 +15,13 @@ interface OmniWindowProps {
 
 export function OmniWindow({ title, zIndex, isActive, onClose, onFocus, children }: OmniWindowProps) {
   const [isMaximized, setIsMaximized] = useState(false);
+  const dragControls = useDragControls();
 
   return (
     <motion.div
       drag={!isMaximized}
+      dragControls={dragControls}
+      dragListener={false}
       dragMomentum={false}
       initial={{ opacity: 0, scale: 0.9, y: 20 }}
       animate={{ 
@@ -30,11 +34,16 @@ export function OmniWindow({ title, zIndex, isActive, onClose, onFocus, children
         left: isMaximized ? 0 : '25%',
       }}
       style={{ zIndex, position: 'fixed' }}
-      onPointerDown={onFocus}
+      onMouseDown={() => {
+        if (!isActive) onFocus();
+      }}
       className={`bg-[#14171C] border ${isActive ? 'border-[#4285F4]/50 shadow-[0_0_40px_rgba(66,133,244,0.2)]' : 'border-white/10'} rounded-xl flex flex-col overflow-hidden transition-colors`}
     >
       {/* Window Header */}
-      <div className={`h-10 border-b border-white/5 flex items-center justify-between px-3 cursor-move ${isActive ? 'bg-[#4285F4]/5' : 'bg-white/2'}`}>
+      <div 
+        onPointerDown={(e) => dragControls.start(e)}
+        className={`h-10 border-b border-white/5 flex items-center justify-between px-3 cursor-move ${isActive ? 'bg-[#4285F4]/5' : 'bg-white/2'}`}
+      >
         <div className="flex items-center gap-2">
            <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-[#4285F4]' : 'bg-[#5F6368]'}`} />
            <span className="text-[10px] font-bold uppercase tracking-widest text-[#E8EAED]">{title}</span>

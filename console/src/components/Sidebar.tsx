@@ -1,8 +1,8 @@
 import type { GeneratedAsset, VaultFile } from '../lib/types';
 import {
   ChevronLeft, ChevronRight,
-  FileText, Image, Video, Upload, Download, Award, Film, Palette,
-  Terminal, Layout, Database, Vault, Shield, Share2, Settings
+  FileText, Image, Video, Upload, Award, Film, Palette,
+  Terminal, Layout, Database, Vault, Shield, Share2, Settings, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,29 +11,41 @@ interface SidebarProps {
   onToggle: () => void;
   activeTab: 'nodes' | 'terminal' | 'vault' | 'brand' | 'audit' | 'distribution' | 'telemetry';
   onTabChange: (tab: 'nodes' | 'terminal' | 'vault' | 'brand' | 'audit' | 'distribution' | 'telemetry') => void;
+  onOpenAsset: (asset: GeneratedAsset) => void;
   onOpenSettings: () => void;
+  onOpenCommand: () => void;
   assets: GeneratedAsset[];
   vaultFiles: VaultFile[];
   onFileUpload: (files: FileList) => void;
 }
 
-type Tab = 'nodes' | 'terminal' | 'vault' | 'brand' | 'audit' | 'distribution';
+type Tab = 'nodes' | 'terminal' | 'vault' | 'brand' | 'audit' | 'distribution' | 'telemetry';
 
-export function Sidebar({ collapsed, onToggle, activeTab, onTabChange, assets, vaultFiles, onFileUpload, onOpenSettings }: SidebarProps) {
-  const tabs = [
-    { id: 'nodes' as Tab, icon: Layout, label: 'Node Canvas' },
-    { id: 'terminal' as Tab, icon: Terminal, label: 'Thinking Trace' },
-    { id: 'vault' as Tab, icon: Vault, label: 'Asset Vault' },
-    { id: 'brand' as Tab, icon: Database, label: 'Brand Hub' },
-    { id: 'audit' as Tab, icon: Shield, label: 'Security & Audit' },
-    { id: 'telemetry' as Tab, icon: Database, label: 'System Telemetry' },
-    { id: 'distribution' as Tab, icon: Share2, label: 'Distribution' },
+export function Sidebar({ collapsed, onToggle, activeTab, onTabChange, onOpenAsset, assets, vaultFiles, onFileUpload, onOpenSettings, onOpenCommand }: SidebarProps) {
+  const tabs: { id: Tab, icon: any, label: string }[] = [
+    { id: 'nodes', icon: Layout, label: 'Node Canvas' },
+    { id: 'terminal', icon: Terminal, label: 'Thinking Trace' },
+    { id: 'vault', icon: Vault, label: 'Asset Vault' },
+    { id: 'brand', icon: Database, label: 'Brand Hub' },
+    { id: 'audit', icon: Shield, label: 'Security & Audit' },
+    { id: 'telemetry', icon: Database, label: 'System Telemetry' },
+    { id: 'distribution', icon: Share2, label: 'Distribution' },
   ];
 
   return (
     <aside className={`bg-[#1A1D23] border-r border-[rgba(255,255,255,0.08)] flex flex-col transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
       
-      {/* Tab Bar (Vertical enforced) */}
+      <button
+        onClick={onOpenCommand}
+        className="mx-2 mb-2 py-3 px-4 bg-gradient-to-r from-[#4285F4] to-[#00E5FF] hover:from-[#5a95f5] hover:to-[#33eaff] text-white rounded-xl flex items-center justify-center gap-3 transition-all shadow-[0_0_20px_rgba(66,133,244,0.3)] hover:shadow-[0_0_30px_rgba(66,133,244,0.5)] group"
+        title="Execute Command (Ctrl+K)"
+      >
+        <Zap size={18} className="group-hover:scale-110 transition-transform" />
+        {!collapsed && (
+          <span className="text-xs font-bold uppercase tracking-widest">Execute</span>
+        )}
+      </button>
+
       <nav className="flex flex-col border-b border-[rgba(255,255,255,0.08)] p-2 gap-1 px-1.5">
         {tabs.map(tab => (
           <button
@@ -58,7 +70,6 @@ export function Sidebar({ collapsed, onToggle, activeTab, onTabChange, assets, v
         ))}
       </nav>
 
-      {/* Content */}
       <div className="flex-1 overflow-hidden">
         {!collapsed && (
           <AnimatePresence mode="wait">
@@ -76,6 +87,7 @@ export function Sidebar({ collapsed, onToggle, activeTab, onTabChange, assets, v
                   assets={assets} 
                   files={vaultFiles} 
                   onUpload={onFileUpload}
+                  onOpenAsset={onOpenAsset}
                 />
               )}
               {activeTab === 'brand' && <div className="text-[10px] text-[#5F6368] font-mono p-4">Brand Hub Control Active...</div>}
@@ -87,7 +99,6 @@ export function Sidebar({ collapsed, onToggle, activeTab, onTabChange, assets, v
         )}
       </div>
 
-      {/* Collapse Toggle */}
       <div className="flex flex-col border-t border-[rgba(255,255,255,0.08)]">
         <button 
           onClick={onOpenSettings}
@@ -133,7 +144,7 @@ function NodesPanel() {
   );
 }
 
-function VaultPanel({ assets, files, onUpload }: { assets: GeneratedAsset[], files: VaultFile[], onUpload: (f: FileList) => void }) {
+function VaultPanel({ assets, files, onUpload, onOpenAsset }: { assets: GeneratedAsset[], files: VaultFile[], onUpload: (f: FileList) => void, onOpenAsset: (a: GeneratedAsset) => void }) {
   const getIcon = (type: string) => {
     switch(type) {
       case 'image': return <Image size={10} />;
@@ -146,8 +157,8 @@ function VaultPanel({ assets, files, onUpload }: { assets: GeneratedAsset[], fil
   };
 
   const allItems = [
-    ...assets.map(a => ({ id: a.id, title: a.title, subtitle: `By ${a.generatedBy}`, type: a.type })),
-    ...files.map(f => ({ id: f.id, title: f.name, subtitle: `Imported via ${f.source}`, type: f.type || 'file' }))
+    ...assets.map(a => ({ id: a.id, title: a.title, subtitle: `By ${a.generatedBy}`, type: a.type, raw: a })),
+    ...files.map(f => ({ id: f.id, title: f.name, subtitle: `Imported via ${f.source}`, type: f.type || 'file', raw: { ...f, title: f.name, id: f.id, createdAt: f.createdAt, generatedBy: f.source } as any as GeneratedAsset }))
   ];
 
   return (
@@ -161,7 +172,11 @@ function VaultPanel({ assets, files, onUpload }: { assets: GeneratedAsset[], fil
       </div>
       <div className="space-y-2">
         {allItems.map(item => (
-          <div key={item.id} className="p-2 rounded-lg bg-black/20 border border-white/5 flex items-center gap-2 group hover:border-[#34A853]/30 transition-all">
+          <div 
+            key={item.id} 
+            onClick={() => onOpenAsset(item.raw)}
+            className="p-2 rounded-lg bg-black/20 border border-white/5 flex items-center gap-2 group hover:border-[#34A853]/30 transition-all cursor-pointer"
+          >
             <div className="p-1.5 rounded bg-[#34A853]/10 text-[#34A853]">
               {getIcon(item.type)}
             </div>
@@ -169,9 +184,6 @@ function VaultPanel({ assets, files, onUpload }: { assets: GeneratedAsset[], fil
               <div className="text-[9px] font-bold text-[#E8EAED] truncate">{item.title}</div>
               <div className="text-[8px] text-[#5F6368] italic">{item.subtitle}</div>
             </div>
-            <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/5 rounded text-[#5F6368] transition-all">
-              <Download size={10} />
-            </button>
           </div>
         ))}
         {allItems.length === 0 && (

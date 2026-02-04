@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AGENTICUM G5 | Autonomous Marketing OS</title>
-  <meta name="description" content="The end of tool-using. Deploy your autonomous marketing operating system.">
+  <title>AGENTICUM G5 | Autonomous Marketing OS (Gemini 3 Optimized)</title>
+  <meta name="description" content="The end of tool-using. Deploy your autonomous marketing operating system. Powered by Gemini 3.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
       --accent-green: #00ff88;
       --accent-purple: #a855f7;
       --accent-orange: #ff6b35;
+      --accent-gold: #FFD700;
       --text-primary: #ffffff;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
@@ -107,6 +108,46 @@
       background: var(--accent-cyan);
       color: var(--bg-primary);
       box-shadow: 0 0 30px rgba(0,240,255,0.4);
+    }
+
+    /* === GLITCH EFFECT === */
+    .glitch-wrapper {
+      display: inline-block;
+      position: relative;
+    }
+    .glitch-text::before, .glitch-text::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-primary);
+    }
+    .glitch-text::before {
+      left: 2px;
+      text-shadow: -2px 0 var(--accent-cyan);
+      clip: rect(44px, 450px, 56px, 0);
+      animation: glitch-anim 5s infinite linear alternate-reverse;
+    }
+    .glitch-text::after {
+      left: -2px;
+      text-shadow: -2px 0 var(--accent-purple);
+      clip: rect(44px, 450px, 56px, 0);
+      animation: glitch-anim2 5s infinite linear alternate-reverse;
+    }
+    @keyframes glitch-anim {
+      0% { clip: rect(31px, 9999px, 94px, 0); }
+      20% { clip: rect(62px, 9999px, 42px, 0); }
+      40% { clip: rect(16px, 9999px, 78px, 0); }
+      60% { clip: rect(89px, 9999px, 13px, 0); }
+      80% { clip: rect(54px, 9999px, 33px, 0); }
+      100% { clip: rect(2px, 9999px, 91px, 0); }
+    }
+    @keyframes glitch-anim2 {
+      0% { clip: rect(65px, 9999px, 100px, 0); }
+      20% { clip: rect(12px, 9999px, 58px, 0); }
+      40% { clip: rect(82px, 9999px, 2px, 0); }
+      60% { clip: rect(43px, 9999px, 71px, 0); }
+      80% { clip: rect(27px, 9999px, 86px, 0); }
+      100% { clip: rect(94px, 9999px, 49px, 0); }
     }
 
     /* === HERO === */
@@ -586,10 +627,13 @@
     <div class="hero-content">
       <div class="hero-badge">
         <span>🚀</span>
-        <span>GOOGLE DEEPMIND GEMINI HACKATHON 2025</span>
+        <span>GOOGLE DEEPMIND GEMINI 3 HACKATHON 2026 // SUBMISSION CLASSIFIED</span>
       </div>
-      <h1 class="hero-title">THE END OF<br><span class="accent">TOOL-USING</span></h1>
-      <p class="hero-subtitle">Deploy your autonomous marketing operating system. One intent. Four AI agents. Complete campaign execution in under 30 seconds.</p>
+      <h1 class="hero-title glitch-wrapper">
+        <span class="glitch-text" data-text="THE END OF">THE END OF</span><br>
+        <span class="accent">TOOL-USING</span>
+      </h1>
+      <p class="hero-subtitle">Deploy your autonomous marketing operating system. Powered by **Gemini 3** Reasoning. One intent. Four agents. Complete campaign execution with forensic audit trail.</p>
       <div class="hero-cta-group">
         <a href="__CONSOLE_URL__" class="btn-primary">INITIATE SEQUENCE →</a>
         <a href="#how-it-works" class="btn-secondary">VIEW ARCHITECTURE</a>
@@ -604,8 +648,12 @@
           <div class="metric-label">Autonomous Agents</div>
         </div>
         <div class="metric">
-          <div class="metric-value">100%</div>
-          <div class="metric-label">Google Cloud</div>
+          <div class="metric-value">GEMINI 3</div>
+          <div class="metric-label">Neural Engine</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value">SECURE</div>
+          <div class="metric-label">Protocol Lock</div>
         </div>
       </div>
     </div>
@@ -751,41 +799,44 @@
   <section class="section">
     <div class="container">
       <div class="section-header">
-        <div class="section-label">/// INFRASTRUCTURE</div>
-        <h2 class="section-title">Alphabet-Native Stack</h2>
-        <p class="section-desc">Maximum performance through modal coherence. Zero external dependencies.</p>
+        <div class="section-label">/// NEURAL PROTOCOL</div>
+        <h2 class="section-title">The Gemini 3 Synergistic Core</h2>
+        <p class="section-desc">AGENTICUM G5 represents a paradigm shift in autonomous marketing, powered exclusively by the Gemini 3 API. Gemini 3 serves as the "Frontal Lobe" of the G5 Orchestrator (SN-00), leveraging its advanced reasoning and massive context window to parse complex human intent and translate it into a non-linear execution graph.</p>
       </div>
       <div class="tech-grid">
         <div class="tech-item">
           <div class="tech-icon">🧠</div>
-          <div class="tech-name">Gemini 2.0 Flash</div>
-          <div class="tech-desc">Reasoning Engine</div>
+          <div class="tech-name">Gemini 3</div>
+          <div class="tech-desc">Reasoning Hub</div>
         </div>
         <div class="tech-item">
-          <div class="tech-icon">🔍</div>
-          <div class="tech-name">Search Grounding</div>
-          <div class="tech-desc">Real-Time Data</div>
+          <div class="tech-icon">✨</div>
+          <div class="tech-name">Imagen 3</div>
+          <div class="tech-desc">Visual Architecture</div>
         </div>
         <div class="tech-item">
-          <div class="tech-icon">💭</div>
-          <div class="tech-name">Thinking Mode</div>
-          <div class="tech-desc">Deep Reasoning</div>
+          <div class="tech-icon">🔐</div>
+          <div class="tech-name">Protocol Lock</div>
+          <div class="tech-desc">Secure MFA Substrate</div>
         </div>
         <div class="tech-item">
-          <div class="tech-icon">⚡</div>
-          <div class="tech-name">Cloud Functions</div>
-          <div class="tech-desc">Serverless Backend</div>
+          <div class="tech-icon">💬</div>
+          <div class="tech-name">Neural Dialogue</div>
+          <div class="tech-desc">Agent Synergy Chain</div>
         </div>
         <div class="tech-item">
-          <div class="tech-icon">🔥</div>
-          <div class="tech-name">Firestore</div>
-          <div class="tech-desc">Real-Time Database</div>
+          <div class="tech-icon">🗺️</div>
+          <div class="tech-name">Heatmap Sync</div>
+          <div class="tech-desc">Cluster Density</div>
         </div>
         <div class="tech-item">
-          <div class="tech-icon">☁️</div>
-          <div class="tech-name">Vertex AI</div>
-          <div class="tech-desc">Enterprise ML</div>
+          <div class="tech-icon">📜</div>
+          <div class="tech-name">Audit Trail</div>
+          <div class="tech-desc">Forensic Persistence</div>
         </div>
+      </div>
+      <div style="margin-top: 4rem; padding: 2rem; background: rgba(0,240,255,0.05); border: 1px solid rgba(0,240,255,0.1); border-radius: 12px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8;">
+        <p>Unlike traditional RAG systems, G5 utilizes Gemini 3’s native <strong>Search Grounding</strong> to ensure all marketing strategies are anchored in real-time global market trends. The Orchestrator manages a swarm of specialized agents—Strategists, Auditors, and Design Architects—all powered by Gemini 3 and Imagen 3. These agents engage in <strong>"Neural Dialogue"</strong>, a collaborative multi-agent reasoning chain where Gemini 3 critiques its own strategies until an optimal campaign substrate is reached. The entire OS is secured by a <strong>Protocol Lock</strong>, ensuring that high-compute neural overrides are verified through a simulated biometric substrate before execution.</p>
       </div>
     </div>
   </section>
@@ -806,7 +857,7 @@
         <a href="#how-it-works">Architecture</a>
         <a href="https://github.com">GitHub</a>
       </div>
-      <div class="footer-version">v1.0.0 // Built for Google DeepMind Gemini Hackathon 2025</div>
+      <div class="footer-version">v1.5.0 // Built for Google DeepMind Gemini 3 Hackathon 2026 // SECURED SUBSTRATE</div>
     </div>
   </footer>
 

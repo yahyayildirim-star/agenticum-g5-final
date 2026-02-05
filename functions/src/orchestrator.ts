@@ -46,15 +46,15 @@ export async function orchestrate(intent: string): Promise<string> {
     await updateNodeStatus(sessionId, "SN-00", "running", 15);
     await appendLog(sessionId, { level: "system", source: "SN-00", message: "[SN-00] Intent analysis with Thinking Mode..." });
 
-    const rawPrompt = `Analysiere diese Marketing-Anfrage und erstelle einen Ausführungsplan:
+    const rawPrompt = `Analyze this marketing request and create an execution plan:
 
-    Anfrage: "${intent}"
+    Request: "${intent}"
 
-    Bestimme welche Nodes aktiviert werden und in welcher Reihenfolge.
-    Verfügbare Nodes: SP-01 (Strategy), CC-06 (Video), RA-01 (Research), DA-03 (Design)
-    Regel: SP-01 und RA-01 können parallel laufen in Phase 1. CC-06 und DA-03 brauchen SP-01 Output und laufen parallel in Phase 2.
+    Determine which nodes are activated and in what order.
+    Available nodes: SP-01 (Strategy), CC-06 (Video), RA-01 (Research), DA-03 (Design)
+    Rule: SP-01 and RA-01 can run in parallel in Phase 1. CC-06 and DA-03 require SP-01 output and run in parallel in Phase 2.
 
-    Antworte im JSON-Format:
+    Respond in JSON format:
     { "summary": "...", "parallel_phase_1": ["SP-01", "RA-01"], "sequential_phase_2": ["CC-06", "DA-03"] }`;
 
     const analysisPrompt = augmentPromptWithContext(rawPrompt, { brandDNA, historicalInsights: insightStrings });
@@ -196,19 +196,19 @@ export async function resume(sessionId: string, approvalData: any): Promise<void
  */
 export async function evaluateABTest(assetA: any, assetB: any): Promise<any> {
   const brandDNA = await getBrandDNA();
-  const prompt = `Du bist ein Enterprise-Auditor. Vergleiche diese zwei Marketing-Assets:
+  const prompt = `You are an enterprise auditor. Compare these two marketing assets:
   
   VARIANT A: ${assetA.title} - ${assetA.content}
   VARIANT B: ${assetB.title} - ${assetB.content}
   
   BRAND DNA: ${brandDNA}
   
-  Analysiere beide auf Basis der Brand DNA und prognostiziere:
-  1. CTR (Klickrate)
+  Analyze both based on the Brand DNA and predict:
+  1. CTR (Click-through rate)
   2. Engagement (%)
-  3. Conversion Wahrscheinlichkeit
+  3. Conversion probability
   
-  Antworte im JSON Format:
+  Respond in JSON format:
   {
     "winner": "A" | "B",
     "metricsA": { "ctr": 0, "engagement": 0, "conversion": 0 },

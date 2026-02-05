@@ -201,7 +201,7 @@ function App() {
   const handleResume = async (approved: boolean) => {
     if (!sessionId) return;
     setIsResuming(true);
-    addLog('system', 'HITL', approved ? 'Strategie genehmigt. Setze Ausführung fort...' : 'Abbruch durch Benutzer.');
+    addLog('system', 'HITL', approved ? 'Strategy approved. Resuming execution...' : 'Cancelled by user.');
     
     try {
       if (approved) {
@@ -211,7 +211,7 @@ function App() {
         handleClear();
       }
     } catch (e) {
-      addLog('error', 'SYSTEM', `Fehler beim Fortsetzen: ${e instanceof Error ? e.message : 'Unbekannt'}`);
+      addLog('error', 'SYSTEM', `Error resuming: ${e instanceof Error ? e.message : 'Unknown'}`);
     } finally {
       setIsResuming(false);
     }
@@ -493,8 +493,8 @@ function App() {
                       <CheckCircle size={20} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-[#E8EAED]">Review erforderlich</h3>
-                      <p className="text-[10px] text-[#9AA0A6]">Plan erstellt. Bitte prüfen und freigeben.</p>
+                      <h3 className="text-sm font-semibold text-[#E8EAED]">Review Required</h3>
+                      <p className="text-[10px] text-[#9AA0A6]">Plan generated. Please review and approve.</p>
                     </div>
                   </div>
 
@@ -504,7 +504,7 @@ function App() {
                       disabled={isResuming}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#FFD700]/10 hover:bg-[#FFD700]/20 text-[#FFD700] rounded-lg transition-all text-xs font-bold"
                     >
-                      {isResuming ? 'SENDING...' : 'STRATEGIE FREIGEBEN'}
+                      {isResuming ? 'SENDING...' : 'APPROVE STRATEGY'}
                     </button>
                     <button 
                       onClick={() => handleResume(false)}

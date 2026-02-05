@@ -24,7 +24,7 @@ export async function orchestrate(intent: string): Promise<string> {
   await appendLog(sessionId, {
     level: "system",
     source: "SN-00",
-    message: `[SN-00] Orchestration gestartet. Session: ${sessionId}`,
+    message: `[SN-00] Orchestration started. Session: ${sessionId}`,
   });
 
   try {
@@ -44,7 +44,7 @@ export async function orchestrate(intent: string): Promise<string> {
 
     // ─── Phase 1: Planning & Intent Analysis ──────────────────
     await updateNodeStatus(sessionId, "SN-00", "running", 15);
-    await appendLog(sessionId, { level: "system", source: "SN-00", message: "[SN-00] Intent-Analyse mit Thinking Mode..." });
+    await appendLog(sessionId, { level: "system", source: "SN-00", message: "[SN-00] Intent analysis with Thinking Mode..." });
 
     const rawPrompt = `Analysiere diese Marketing-Anfrage und erstelle einen Ausführungsplan:
 
@@ -98,7 +98,7 @@ export async function orchestrate(intent: string): Promise<string> {
     await appendLog(sessionId, {
       level: "system",
       source: "SN-00",
-      message: `[SN-00] Strategischer Entwurf bereit. Warte auf Enterprise-Freigabe (HITL)...`,
+      message: `[SN-00] Strategic draft ready. Awaiting Enterprise Approval (HITL)...`,
     });
 
     return sessionId;
@@ -120,7 +120,7 @@ interface ExecutionPlan {
  * ─── RESUME: Execution Phases ────────────────────────────────
  */
 export async function resume(sessionId: string, approvalData: any): Promise<void> {
-  await appendLog(sessionId, { level: "success", source: "SN-00", message: "[SN-00] Strategie genehmigt. Starte Ausführungs-Kette..." });
+  await appendLog(sessionId, { level: "success", source: "SN-00", message: "[SN-00] Strategy approved. Starting execution chain..." });
   await updateSessionStatus(sessionId, "running");
 
   const session = (await getSession(sessionId)) as any;
@@ -156,7 +156,7 @@ export async function resume(sessionId: string, approvalData: any): Promise<void
       })
     );
 
-    await appendLog(sessionId, { level: "system", source: "SN-00", message: "[SN-00] Phase 1 abgeschlossen." });
+    await appendLog(sessionId, { level: "system", source: "SN-00", message: "[SN-00] Phase 1 complete." });
 
     // ─── SCHRITT 3: Phase 2 — Sequentiell ──────────────────
     await updateNodeStatus(sessionId, "SN-00", "running", 70);
